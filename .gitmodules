@@ -1,0 +1,3 @@
+[submodule "resources/public/css/loaders.css"]
+	path = resources/public/css/loaders.css
+	url = https://github.com/ConnorAtherton/loaders.css.git
