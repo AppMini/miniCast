@@ -1,15 +1,19 @@
 (ns minicast.core
+    (:require-macros [cljs.core.async.macros :refer [go]])
     (:require [reagent.core :as reagent :refer [atom]]
               [reagent.session :as session]
               [secretary.core :as secretary :include-macros true]
               [goog.events :as events]
-              [goog.history.EventType :as EventType])
+              [goog.history.EventType :as EventType]
+              [cljs-http.client :as http]
+              [cljs.core.async :refer [<!]])
     (:import goog.History))
 
 (defonce app-state (atom nil))
 (defonce errors (atom []))
+(defonce auth-state (atom nil))
 
-(def server-url "http://localhost:8000/")
+(def server-url "http://localhost:8000/server/")
 
 ;; -------------------------
 ;; Components
@@ -79,4 +83,8 @@
 (defn init! []
   (hook-browser-navigation!)
   (mount-root))
+
+; make the request to get our state
+(go (let [response (<! (http/get (str server-url "state.php") {:with-credentials? false}))]
+  (reset! auth-state (js/JSON.parse (:body response)))))
 
