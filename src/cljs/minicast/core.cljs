@@ -35,7 +35,7 @@
 ;; -------------------------
 ;; Helper functions
 
-(defn error-handler [{:keys [status status-text]}]
+(defn ajax-error-handler [{:keys [status status-text]}]
   (swap! errors conj (str "Oops: " status " " status-text)))
 
 ;; -------------------------
