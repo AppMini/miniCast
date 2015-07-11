@@ -32,6 +32,16 @@
     [:div {:class "fog"}]
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
+(defn component-first-run []
+  (let [un (atom "") pw (atom "")]
+    [:div {:class "firstrun"}
+     (component-logo)
+     [:div
+      [:p "To get started create a new username and password:"]
+      [:input {:placeholder "username" :type "text" :value @un :on-change (fn [ev] (reset! un (-> ev .-target .-value)) (println @un))}]
+      [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
+      [:button "Go"]]]))
+
 ;; -------------------------
 ;; Helper functions
 
@@ -44,12 +54,16 @@
 (defn home-page []
   (fn []
     [:div
-     (component-errors)
-     (if (nil? @app-state)
+      ; display any errors received to the user
+      (component-errors)
+      ; we don't have authentication state or app-state yet
+      (if (nil? @auth-state)
         [:div
-          (component-logo)
-          (component-loader)]
-        [:div "Have state."])]))
+            (component-logo)
+            (component-loader)])
+      (cond
+        (= @auth-state "AUTH_NO_FILE") (component-first-run))
+      [:div {:class "debug"} @auth-state]]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
