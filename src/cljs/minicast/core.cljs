@@ -21,7 +21,7 @@
 (defn component-errors []
   (if (not (empty? @errors))
     [:div {:class "errors" :on-click (fn [ev] (reset! errors nil))}
-      (map (fn [e] [:div {:class "error"} [:i {:class "fa fa-warning"}] e]) @errors)]))
+      (map-indexed (fn [i e] [:div {:class "error" :key (str "error-" i)} [:i {:class "fa fa-warning"}] e]) @errors)]))
 
 (defn component-loader []
   [:div {:class "loader-inner line-scale-pulse-out-rapid"}
