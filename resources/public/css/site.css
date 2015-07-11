@@ -9,13 +9,13 @@ body {
 }
 
 .fog {
-	position: fixed;
-	top: 0px;
-	left: 0px;
-	right: 0px;
-	height: 150px;
-	z-index: 11;
-	background: -moz-linear-gradient(bottom,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 90%); /* FF3.6+ */
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  height: 150px;
+  z-index: 11;
+  background: -moz-linear-gradient(bottom,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 90%); /* FF3.6+ */
   background: -webkit-gradient(linear, left bottom, left bottom, color-stop(0%,rgba(255,255,255,0)), color-stop(90%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
   background: -webkit-linear-gradient(bottom,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* Chrome10+,Safari5.1+ */
   background: -o-linear-gradient(bottom,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* Opera 11.10+ */
@@ -25,11 +25,11 @@ body {
 }
 
 .logo {
-	margin-left:auto;
-	margin-right: auto;
-	color: #2a2a2a;
-	text-align: center;
-	letter-spacing: -1;
+  margin-left:auto;
+  margin-right: auto;
+  color: #2a2a2a;
+  text-align: center;
+  letter-spacing: -1;
 }
 
 .loader-inner {
@@ -42,19 +42,21 @@ body {
   background-color: #888888 !important;
 }
 
-h1, h2, h3 {
-  color: #000;
-}
-h1 {
-  font-size: 2.5em
-}
-
-h2 {
-  font-size: 2em
-}
-
-h3 {
-  font-size: 1.5em
+.fog_bottom {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  height: 150px;
+  z-index: 11;
+  margin-bottom: 100px;
+  background: -moz-linear-gradient(top,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 90%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,0)), color-stop(90%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* IE10+ */
+  background: linear-gradient(to bottom,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 90%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
 }
 
 a {
@@ -64,4 +66,89 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+/*** Podcast things ***/
+
+.podcast_item {
+  width:500px;
+  height: auto;
+  margin-left: 230px;
+  margin-right: 230px;
+  margin-top: 5px;
+  float: left;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0px 1px 1px #f9f9fb;
+  border-bottom: 1px solid #dfdfe1;
+  background: rgb(244,245,247); /* Old browsers */
+  background: -moz-linear-gradient(top,  rgba(244,245,247,1) 0%, rgba(243,243,245,1) 100%); /* FF3.6+ */
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(244,245,247,1)), color-stop(100%,rgba(243,243,245,1))); /* Chrome,Safari4+ */
+  background: -webkit-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* Chrome10+,Safari5.1+ */
+  background: -o-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* Opera 11.10+ */
+  background: -ms-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* IE10+ */
+  background: linear-gradient(to bottom,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f4f5f7', endColorstr='#f3f3f5',GradientType=0 ); /* IE6-9 */
+}
+
+.podcast_image {
+  width:100px;
+  height: auto;
+  float: left;
+}
+
+.podcast_image img {
+  width:100px;
+  height: auto;
+  float: left;
+  border-radius: 2px;
+}
+
+.podcast_left {
+  width: 100px;
+  float: left;
+}
+
+.podcast_name {
+  float: left;
+  font-size: 11px;
+  width: 380px;
+  padding-bottom: 0px;
+  color: #555555;
+}
+
+.podcast_right {
+  width:380px;
+  padding-left: 20px;
+  float: left;
+}
+
+.podcast_description {
+  font-size: 11px;
+  margin-top: 10px;
+  padding-bottom: 10px;
+}
+
+.podcast_playing {
+  z-index: 13;
+  position: fixed;
+  left:0px;
+  right:0px;
+  bottom:0px;
+  background-color: #fff;
+}
+
+.podcast_playing_image {
+  width:100px;
+  height: auto;
+  float: left;
+  margin-left: 10px;
+  margin-bottom: 10px;
+}
+
+.podcast_playing_image img {
+  width:100px;
+  height: auto;
+  float: left;
+  border-radius: 2px;
 }
