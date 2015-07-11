@@ -69,6 +69,11 @@ body {
   margin-right: 0.5em;
 }
 
+.debug {
+  color: silver;
+  font-size: 0.5em;
+}
+
 .fog_bottom {
   position: fixed;
   bottom: 0px;
@@ -93,6 +98,14 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+p {
+  font-size: 11px;
+}
+
+button {
+  min-width: 5em;
 }
 
 /*** Podcast things ***/
