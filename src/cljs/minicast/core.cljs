@@ -7,8 +7,17 @@
     (:import goog.History))
 
 (defonce app-state (atom nil))
+(defonce errors (atom []))
 
 (def server-url "http://localhost:8000/")
+
+;; -------------------------
+;; Components
+
+(defn component-errors []
+  (if (not (empty? @errors))
+    [:div {:class "errors" :on-click (fn [ev] (reset! errors nil))}
+      (map (fn [e] [:div {:class "error"} [:i {:class "fa fa-warning"}] e]) @errors)]))
 
 (defn component-loader []
   [:div {:class "loader-inner line-scale-pulse-out-rapid"}
@@ -20,11 +29,18 @@
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
 ;; -------------------------
+;; Helper functions
+
+(defn error-handler [{:keys [status status-text]}]
+  (swap! errors conj (str "Oops: " status " " status-text)))
+
+;; -------------------------
 ;; Views
 
 (defn home-page []
   (fn []
     [:div
+     (component-errors)
      (if (nil? @app-state)
         [:div
           (component-logo)
@@ -63,3 +79,4 @@
 (defn init! []
   (hook-browser-navigation!)
   (mount-root))
+
