@@ -36,6 +36,7 @@
 
 ;; -------------------------
 ;; Routes
+
 (secretary/set-config! :prefix "#")
 
 (secretary/defroute "/" []
@@ -44,6 +45,7 @@
 ;; -------------------------
 ;; History
 ;; must be called after routes have been defined
+
 (defn hook-browser-navigation! []
   (doto (History.)
     (events/listen
@@ -54,6 +56,7 @@
 
 ;; -------------------------
 ;; Initialize app
+
 (defn mount-root []
   (reagent/render [current-page] (.getElementById js/document "app")))
 
