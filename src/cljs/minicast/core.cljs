@@ -21,8 +21,13 @@
 ;; Views
 
 (defn home-page []
-  [:div (component-logo)
-   (component-loader)])
+  (fn []
+    [:div
+     (if (nil? @app-state)
+        [:div
+          (component-logo)
+          (component-loader)]
+        [:div "Have state."])]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
