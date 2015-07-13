@@ -5,7 +5,7 @@
               [secretary.core :as secretary :include-macros true]
               [goog.events :as events]
               [goog.history.EventType :as EventType]
-              [cljs-http.client :as http]
+              [ajax.core :refer [GET POST ajax-request json-response-format]]
               [cljs.core.async :refer [<!]])
     (:import goog.History))
 
@@ -14,6 +14,29 @@
 (defonce auth-state (atom nil))
 
 (def server-url "http://localhost:8000/server/")
+
+;; -------------------------
+;; Helper functions
+
+; log a single error message
+(defn log-error [e]
+  (swap! errors conj e))
+
+; if we hit an error loading an ajax endpoint
+(defn ajax-error-handler [{:keys [status status-text]}]
+  (log-error (str "Oops: " status " " status-text)))
+
+; unified interface for access to our api
+(defn api-request [endpoint callback]
+  (ajax-request {:uri (str server-url endpoint ".php") :method :get :response-format (json-response-format) :handler
+    (fn [[ok result]]
+      (callback [ok result]))}))
+
+; initiate the request for user's current state
+(defn request-state []
+  (api-request "state"
+    (fn [[ok result]]
+      (reset! auth-state (:response result)))))
 
 ;; -------------------------
 ;; Components
@@ -41,12 +64,6 @@
       [:input {:placeholder "username" :type "text" :value @un :on-change (fn [ev] (reset! un (-> ev .-target .-value)) (println @un))}]
       [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
       [:button "Go"]]]))
-
-;; -------------------------
-;; Helper functions
-
-(defn ajax-error-handler [{:keys [status status-text]}]
-  (swap! errors conj (str "Oops: " status " " status-text)))
 
 ;; -------------------------
 ;; Views
@@ -98,7 +115,6 @@
   (hook-browser-navigation!)
   (mount-root))
 
-; make the request to get our state
-(go (let [response (<! (http/get (str server-url "state.php") {:with-credentials? false}))]
-  (reset! auth-state (js/JSON.parse (:body response)))))
+; make the request to get our state from the server
+(request-state)
 

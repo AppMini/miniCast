@@ -20,7 +20,8 @@
                  [environ "1.0.0"]
                  [org.clojure/clojurescript "0.0-3308" :scope "provided"]
                  [secretary "1.2.3"]
-                 [cljs-http "0.1.35"]]
+                 [cljs-ajax "0.3.13"]
+                 [tubax "0.1.0-SNAPSHOT"]]
 
   :plugins [[lein-environ "1.0.0"]
             [lein-asset-minifier "0.2.2"]]
