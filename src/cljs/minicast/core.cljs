@@ -27,16 +27,17 @@
   (log-error (str "Oops: " status " " status-text)))
 
 ; unified interface for access to our api
-(defn api-request [endpoint callback]
-  (ajax-request {:uri (str server-url endpoint ".php") :method :get :response-format (json-response-format) :handler
-    (fn [[ok result]]
-      (callback [ok result]))}))
+(defn api-request [endpoint params]
+  (ajax-request (merge {:uri (str server-url endpoint ".php") :method :get :response-format (json-response-format)} params)))
+
+; get the body of the returned request regardless of whether it was an error or not
+(defn get-body [ok result] (if ok result (:response result)))
 
 ; initiate the request for user's current state
 (defn request-state []
-  (api-request "state"
+  (api-request "state" {:handler
     (fn [[ok result]]
-      (reset! auth-state (:response result)))))
+      (reset! auth-state (get-body ok result)))}))
 
 ;; -------------------------
 ;; Components
@@ -55,15 +56,23 @@
     [:div {:class "fog"}]
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
-(defn component-first-run []
-  (let [un (atom "") pw (atom "")]
+(let [un (atom "") pw (atom "")]
+  (defn submit-create-auth-file []
+    ; tell the server the new username and password to create in the auth file
+    (api-request "auth" { :params {:username @un :password @pw} :handler
+      (fn [[ok result]]
+        (if (= (get-body ok result) "AUTH_FILE_CREATED")
+          (request-state)
+          (log-error "Couldn't create the authentication config file.")))}))
+  
+  (defn component-first-run []
     [:div {:class "firstrun"}
      (component-logo)
      [:div
-      [:p "To get started create a new username and password:"]
-      [:input {:placeholder "username" :type "text" :value @un :on-change (fn [ev] (reset! un (-> ev .-target .-value)) (println @un))}]
-      [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-      [:button "Go"]]]))
+       [:p "To get started create a new username and password:"]
+       [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
+       [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
+       [:button {:on-click submit-create-auth-file} "Go"]]]))
 
 ;; -------------------------
 ;; Views
@@ -80,7 +89,7 @@
             (component-loader)])
       (cond
         (= @auth-state "AUTH_NO_FILE") (component-first-run))
-      [:div {:class "debug"} @auth-state]]))
+      [:div {:class "debug"} "Debug: " @auth-state]]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
