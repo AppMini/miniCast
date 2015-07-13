@@ -57,22 +57,23 @@
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
 (let [un (atom "") pw (atom "")]
-  (defn submit-create-auth-file []
+  (defn submit-user-pass-form []
     ; tell the server the new username and password to create in the auth file
     (api-request "auth" { :params {:username @un :password @pw} :handler
       (fn [[ok result]]
-        (if (= (get-body ok result) "AUTH_FILE_CREATED")
-          (request-state)
-          (log-error "Couldn't create the authentication config file.")))}))
+        (let [r (get-body ok result)]
+          (cond (= r "AUTH_FILE_CREATED") (request-state)
+            (= r "AUTH_FAILED") (do (log-error "Incorrect username/password.") (request-state))
+            (= r "AUTHENTICATED") (do (reset! auth-state r) (reset! errors nil)))))}))
   
-  (defn component-first-run []
-    [:div {:class "firstrun"}
+  (defn component-user-pass [formclass message]
+    [:div {:class formclass}
      (component-logo)
      [:div
-       [:p "To get started create a new username and password:"]
+       [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
        [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-       [:button {:on-click submit-create-auth-file} "Go"]]]))
+       [:button {:on-click submit-user-pass-form} "Go"]]]))
 
 ;; -------------------------
 ;; Views
@@ -88,7 +89,9 @@
             (component-logo)
             (component-loader)])
       (cond
-        (= @auth-state "AUTH_NO_FILE") (component-first-run))
+        (= @auth-state "AUTH_NO_FILE") (component-user-pass "firstrun" "To get started create a new username and password:")
+        (= @auth-state "AUTH_NO_CREDENTIALS") (component-user-pass "login" "Login:")
+        (or (= @auth-state "AUTHENTICATED") (= @auth-state "")) [:div "Hello"])
       [:div {:class "debug"} "Debug: " @auth-state]]))
 
 (defn current-page []
