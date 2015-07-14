@@ -112,6 +112,11 @@ button {
   min-width: 5em;
 }
 
+.tick {
+  color: green;
+  margin-right: 0.5em;
+}
+
 /*** Podcast things ***/
 
 .podcast_item {

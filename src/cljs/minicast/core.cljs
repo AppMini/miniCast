@@ -11,7 +11,7 @@
 
 (defonce app-state (atom nil))
 (defonce errors (atom []))
-(defonce auth-state (atom nil))
+(defonce auth-state (atom "AUTH_UNKNOWN"))
 
 (def server-url "http://localhost:8000/server/")
 
@@ -28,16 +28,17 @@
 
 ; unified interface for access to our api
 (defn api-request [endpoint params]
-  (ajax-request (merge {:uri (str server-url endpoint ".php") :method :get :response-format (json-response-format)} params)))
+  (ajax-request (merge {:uri (str server-url endpoint ".php") :method :get :with-credentials true :response-format (json-response-format)} params)))
 
 ; get the body of the returned request regardless of whether it was an error or not
 (defn get-body [ok result] (if ok result (:response result)))
 
+; update the authentication state token after a request
+(defn update-auth-state-handler [[ok result]] (reset! auth-state (get-body ok result)))
+
 ; initiate the request for user's current state
 (defn request-state []
-  (api-request "state" {:handler
-    (fn [[ok result]]
-      (reset! auth-state (get-body ok result)))}))
+  (api-request "state" {:handler update-auth-state-handler}))
 
 ;; -------------------------
 ;; Components
@@ -59,39 +60,47 @@
 (let [un (atom "") pw (atom "")]
   (defn submit-user-pass-form []
     ; tell the server the new username and password to create in the auth file
-    (api-request "auth" { :params {:username @un :password @pw} :handler
-      (fn [[ok result]]
-        (let [r (get-body ok result)]
-          (cond (= r "AUTH_FILE_CREATED") (request-state)
-            (= r "AUTH_FAILED") (do (log-error "Incorrect username/password.") (request-state))
-            (= r "AUTHENTICATED") (do (reset! auth-state r) (reset! errors nil)))))}))
+    (api-request "auth" {:params {:username @un :password @pw} :handler update-auth-state-handler}))
   
   (defn component-user-pass [formclass message]
     [:div {:class formclass}
-     (component-logo)
      [:div
        [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
        [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-       [:button {:on-click submit-user-pass-form} "Go"]]]))
+       [:button {:on-click submit-user-pass-form} "Go"]]])
+
+  (defn submit-logout-request []
+    (api-request "auth" {:params {:logout true} :handler update-auth-state-handler}))
+
+  (defn component-auth-configured []
+    [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
+      [:button {:on-click submit-logout-request} "Logout"]]))
 
 ;; -------------------------
 ;; Views
 
 (defn home-page []
   (fn []
+    [:div "Home page"]))
+
+(defn sync-config-page []
+  (fn []
     [:div
       ; display any errors received to the user
       (component-errors)
-      ; we don't have authentication state or app-state yet
-      (if (nil? @auth-state)
-        [:div
-            (component-logo)
-            (component-loader)])
+      ; display the logo on this configuration page
+      (component-logo)
+      ; show a loader if we're still loading the auth state
+      (if (= @auth-state "AUTH_UNKNOWN") (component-loader))
+      ; the actual state flow
       (cond
-        (= @auth-state "AUTH_NO_FILE") (component-user-pass "firstrun" "To get started create a new username and password:")
+        (= @auth-state "AUTH_NO_FILE") (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
+        (= @auth-state "AUTH_FAILED") [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
+        (= @auth-state "AUTH_FILE_CREATED") [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
         (= @auth-state "AUTH_NO_CREDENTIALS") (component-user-pass "login" "Login:")
-        (or (= @auth-state "AUTHENTICATED") (= @auth-state "")) [:div "Hello"])
+        (= @auth-state "AUTH_LOGGED_OUT") [:div [:p "You have been logged out."] (component-user-pass "login" "Login:")]
+        (or (= @auth-state "AUTHENTICATED") (= @auth-state nil)) (component-auth-configured))
       [:div {:class "debug"} "Debug: " @auth-state]]))
 
 (defn current-page []
@@ -104,6 +113,9 @@
 
 (secretary/defroute "/" []
   (session/put! :current-page #'home-page))
+
+(secretary/defroute "/sync-config" []
+  (session/put! :current-page #'sync-config-page))
 
 ;; -------------------------
 ;; History
