@@ -85,23 +85,25 @@
     [:div "Home page"]))
 
 (defn sync-config-page []
-  (fn []
-    [:div
-      ; display any errors received to the user
-      (component-errors)
-      ; display the logo on this configuration page
-      (component-logo)
-      ; show a loader if we're still loading the auth state
-      (if (= @auth-state "AUTH_UNKNOWN") (component-loader))
-      ; the actual state flow
-      (cond
-        (= @auth-state "AUTH_NO_FILE") (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
-        (= @auth-state "AUTH_FAILED") [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
-        (= @auth-state "AUTH_FILE_CREATED") [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
-        (= @auth-state "AUTH_NO_CREDENTIALS") (component-user-pass "login" "Login:")
-        (= @auth-state "AUTH_LOGGED_OUT") [:div [:p "You have been logged out."] (component-user-pass "login" "Login:")]
-        (or (= @auth-state "AUTHENTICATED") (= @auth-state nil)) (component-auth-configured))
-      [:div {:class "debug"} "Debug: " @auth-state]]))
+  (let [a @auth-state]
+    
+      [:div
+        ; display any errors received to the user
+        (component-errors)
+        ; display the logo on this configuration page
+        (component-logo)
+        ; show a loader if we're still loading the auth state
+        (if (= a "AUTH_UNKNOWN") (component-loader))
+        ; the actual state flow
+        (case a
+          "AUTH_NO_FILE" (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
+          "AUTH_FAILED" [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
+          "AUTH_FILE_CREATED" [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
+          "AUTH_NO_CREDENTIALS" (component-user-pass "login" "Login:")
+          "AUTH_LOGGED_OUT" [:div [:p "You have been logged out."] (component-user-pass "login" "Login:")]
+          "AUTHENTICATED" (component-auth-configured)
+          nil (component-auth-configured))
+        [:div {:class "debug"} "Debug: " a]]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
