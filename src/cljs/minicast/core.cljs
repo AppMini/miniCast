@@ -40,6 +40,15 @@
 (defn request-state []
   (api-request "state" {:handler update-auth-state-handler}))
 
+; submit the request to log out
+(defn submit-logout-request []
+    (api-request "auth" {:params {:logout true} :handler update-auth-state-handler}))
+
+; submit the request to log in
+(defn submit-user-pass-form [un pw]
+  ; tell the server the username and password to create pass/log in
+  (api-request "auth" {:params {:username @un :password @pw} :handler update-auth-state-handler}))
+
 ;; -------------------------
 ;; Components
 
@@ -58,24 +67,17 @@
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
 (let [un (atom "") pw (atom "")]
-  (defn submit-user-pass-form []
-    ; tell the server the new username and password to create in the auth file
-    (api-request "auth" {:params {:username @un :password @pw} :handler update-auth-state-handler}))
-  
   (defn component-user-pass [formclass message]
     [:div {:class formclass}
      [:div
        [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
        [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-       [:button {:on-click submit-user-pass-form} "Go"]]])
+       [:button {:on-click #(submit-user-pass-form un pw)} "Go"]]]))
 
-  (defn submit-logout-request []
-    (api-request "auth" {:params {:logout true} :handler update-auth-state-handler}))
-
-  (defn component-auth-configured []
-    [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
-      [:button {:on-click submit-logout-request} "Logout"]]))
+(defn component-auth-configured []
+  [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
+    [:button {:on-click submit-logout-request} "Logout"]])
 
 ;; -------------------------
 ;; Views
@@ -86,7 +88,6 @@
 
 (defn sync-config-page []
   (let [a @auth-state]
-    
       [:div
         ; display any errors received to the user
         (component-errors)
