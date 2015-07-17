@@ -34,7 +34,7 @@
 (defn get-body [ok result] (if ok result (:response result)))
 
 ; update the authentication state token after a request
-(defn update-auth-state-handler [[ok result]] (reset! auth-state (get-body ok result)))
+(defn update-auth-state-handler [[ok result]] (do (print "auth state:" ok result) (if (= (:status result) 404) (reset! auth-state "AUTH_NOT_FOUND") (reset! auth-state (get-body ok result)))))
 
 ; initiate the request for user's current state
 (defn request-state []
@@ -96,13 +96,15 @@
         (if (= a "AUTH_UNKNOWN") (component-loader))
         ; the actual state flow
         (case a
+          "AUTH_NOT_FOUND" [:div [:p {:class "error"} "Could not contact the server. Please install the " [:a {:href "https://github.com/chr15m/pellet"} "pellet"] " server into a folder called 'server'." [:p "If you're using git then you should be able to run:"] [:pre [:code "git submodule init\n"  "git submodule update"] ] [:p "Or clone the repository again using:"] [:code "git clone --recursive https://github.com/chr15m/miniCast"]]]
           "AUTH_NO_FILE" (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
           "AUTH_FAILED" [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
           "AUTH_FILE_CREATED" [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
           "AUTH_NO_CREDENTIALS" (component-user-pass "login" "Login:")
           "AUTH_LOGGED_OUT" [:div [:p "You have been logged out."] (component-user-pass "login" "Login:")]
           "AUTHENTICATED" (component-auth-configured)
-          nil (component-auth-configured))
+          nil (component-auth-configured)
+          nil)
         [:div {:class "debug"} "Debug: " a]]))
 
 (defn current-page []
