@@ -19,7 +19,7 @@
 
 (enable-console-print!)
 
-(def server-url "http://localhost:8000/server/")
+(def server-url "http://localhost:8000/server/index.php")
 
 ;; -------------------------
 ;; Helper functions
@@ -33,27 +33,38 @@
   (log-error (str "Oops: " status " " status-text)))
 
 ; unified interface for access to our api
-(defn api-request [endpoint params]
-  (ajax-request (merge {:uri (str server-url endpoint ".php") :method :get :with-credentials true :response-format (json-response-format)} params)))
+(defn api-request [params]
+  (ajax-request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format)} params)))
 
 ; get the body of the returned request regardless of whether it was an error or not
 (defn get-body [ok result] (if ok result (:response result)))
 
 ; update the authentication state token after a request
-(defn update-auth-state-handler [[ok result]] (do (print "auth state:" ok result) (if (= (:status result) 404) (reset! auth-state "AUTH_NOT_FOUND") (reset! auth-state (get-body ok result)))))
+(defn update-auth-state-handler [[ok result]] (do
+  (print "auth state:" ok result)
+  (if (= (:status result) 404)
+    (do (reset! auth-state "AUTH_NOT_FOUND") false)
+    ; TODO: merge the existing state (from localstorage) with server state
+    (do (reset! auth-state (get-body ok result)) true))))
+
+; update the application's state
+(defn update-app-state-handler [[ok result]]
+  (if 
+    (update-auth-state-handler [ok result])
+    (reset! app-state (get-body ok result))))
 
 ; initiate the request for user's current state
 (defn request-state []
-  (api-request "state" {:handler update-auth-state-handler}))
+  (api-request {:handler update-app-state-handler :params {:state ""}}))
 
 ; submit the request to log out
 (defn submit-logout-request []
-    (api-request "auth" {:params {:logout true} :handler update-auth-state-handler}))
+    (api-request {:params {:logout true} :handler update-auth-state-handler}))
 
 ; submit the request to log in
 (defn submit-user-pass-form [un pw]
   ; tell the server the username and password to create pass/log in
-  (api-request "auth" {:params {:username @un :password @pw} :handler update-auth-state-handler}))
+  (api-request {:params {:auth true :username @un :password @pw} :handler update-auth-state-handler}))
 
 ; redirect to the longin page
 (defn redirect [url]
