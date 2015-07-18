@@ -51,6 +51,10 @@
   ; tell the server the username and password to create pass/log in
   (api-request "auth" {:params {:username @un :password @pw} :handler update-auth-state-handler}))
 
+; redirect to the longin page
+(defn redirect [url]
+  (set! (-> js/document .-location .-href) url))
+
 ;; -------------------------
 ;; Components
 
