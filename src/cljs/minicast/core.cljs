@@ -83,7 +83,8 @@
 
 (defn component-auth-configured []
   [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
-    [:button {:on-click submit-logout-request} "Logout"]])
+    [:button {:on-click submit-logout-request} "Logout"]
+    [:button {:on-click (fn [] (redirect "#/"))} "Ok"]])
 
 ;; -------------------------
 ;; Views
