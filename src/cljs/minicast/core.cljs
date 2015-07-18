@@ -1,6 +1,7 @@
 (ns minicast.core
     (:require-macros [cljs.core.async.macros :refer [go]])
-    (:require [reagent.core :as reagent :refer [atom]]
+    (:require [minicast.store :refer [remember! forget! recall]]
+              [reagent.core :as reagent :refer [atom]]
               [reagent.session :as session]
               [secretary.core :as secretary :include-macros true]
               [goog.events :as events]
@@ -9,8 +10,11 @@
               [cljs.core.async :refer [<!]])
     (:import goog.History))
 
-(defonce app-state (atom nil))
+; set the app state from last-saved localstorage
+(defonce app-state (atom (recall "app-state")))
+; collect errors to show to the user
 (defonce errors (atom []))
+; is the user logged in?
 (defonce auth-state (atom "AUTH_UNKNOWN"))
 
 (enable-console-print!)
