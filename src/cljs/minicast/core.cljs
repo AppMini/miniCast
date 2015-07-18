@@ -96,6 +96,7 @@
   (if (case @auth-state "AUTHENTICATED" true nil true false)
     (fn []
       [:div "Home page"])
+    ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
       (redirect "#/sync-config")
       [:div "Redirecting to sync config."])))
