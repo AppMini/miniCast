@@ -13,6 +13,8 @@
 (defonce errors (atom []))
 (defonce auth-state (atom "AUTH_UNKNOWN"))
 
+(enable-console-print!)
+
 (def server-url "http://localhost:8000/server/")
 
 ;; -------------------------
