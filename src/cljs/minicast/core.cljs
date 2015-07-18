@@ -90,8 +90,12 @@
 ;; Views
 
 (defn home-page []
-  (fn []
-    [:div "Home page"]))
+  (if (case @auth-state "AUTHENTICATED" true nil true false)
+    (fn []
+      [:div "Home page"])
+    (do
+      (redirect "#/sync-config")
+      [:div "Redirecting to sync config."])))
 
 (defn sync-config-page []
   (let [a @auth-state]
