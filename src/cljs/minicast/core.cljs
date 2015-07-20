@@ -6,7 +6,7 @@
               [secretary.core :as secretary :include-macros true]
               [goog.events :as events]
               [goog.history.EventType :as EventType]
-              [ajax.core :refer [GET POST ajax-request json-response-format]]
+              [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format]]
               [cljs.core.async :refer [<!]])
     (:import goog.History))
 
@@ -21,6 +21,8 @@
 
 (def server-url "http://localhost:8000/server/index.php")
 
+(print "app-state @ launch:" @app-state)
+
 ;; -------------------------
 ;; Helper functions
 
@@ -32,43 +34,92 @@
 (defn ajax-error-handler [{:keys [status status-text]}]
   (log-error (str "Oops: " status " " status-text)))
 
-; unified interface for access to our api
-(defn api-request [params]
-  (ajax-request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format)} params)))
-
 ; get the body of the returned request regardless of whether it was an error or not
 (defn get-body [ok result] (if ok result (:response result)))
 
 ; update the authentication state token after a request
-(defn update-auth-state-handler [[ok result]] (do
-  (print "auth state:" ok result)
-  (if (= (:status result) 404)
-    (do (reset! auth-state "AUTH_NOT_FOUND") false)
-    ; TODO: merge the existing state (from localstorage) with server state
-    (do (reset! auth-state (get-body ok result)) true))))
+(defn updated-server-state-handler [params]
+  (fn [[ok result]]
+    (do
+      (print "auth state ok:" ok)
+      (print "auth state result:" result)
+      (print "auth state body:" (get-body ok result))
+      ; if we get a 404 from the server without the server sending back the api-error key it isn't installed
+      (cond
+        (or (and
+              ; if we didn't receive an api error
+              (not (contains? (get-body ok result) "api-error"))
+              ; but we did receive a 404
+              (= (:status result) 404))
+            ; or some other non-server error happened
+            (= (:status result) 0))
+          (reset! auth-state "AUTH_SERVER_NOT_FOUND")
+      
+      ; if we got a special error response from the API
+      (contains? (get-body ok result) "api-error")
+        (let [s (get (get-body ok result) "api-error")]
+          (reset! auth-state s))
+      
+      ; if we got a special success response from the API
+      (contains? (get-body ok result) "api")
+        (let [s (get (get-body ok result) "api")]
+          (reset! auth-state s))
+      
+      ; if we got a legitimate state
+      true
+        (let [new-app-state (get-body ok result)]
+          (if (and (not (nil? new-app-state)) (contains? new-app-state :app-state))
+            (do
+              ; TODO: merge the existing state (from localstorage) with server state
+              ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
+              (print "Updating state to" new-app-state)
+              (reset! app-state (:app-state new-app-state)))))))))
 
-; update the application's state
-(defn update-app-state-handler [[ok result]]
-  (if 
-    (update-auth-state-handler [ok result])
-    (reset! app-state (get-body ok result))))
+; unified interface for access to our api
+(defn api-request [params & callback]
+  (ajax-request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format) :handler (updated-server-state-handler params)} {:params params})))
+
+; special call to the proxy request endpoint
+(defn proxy-request [url callback]
+  (ajax-request {:uri server-url :params {:proxy url} :method get :with-credentials true :response-format (raw-response-format) :handler callback}))
 
 ; initiate the request for user's current state
-(defn request-state []
-  (api-request {:handler update-app-state-handler :params {:state ""}}))
+(defn request-app-state []
+  (api-request {:state ""}))
+
+; watch the auth state and if we get AUTHENTICATED then request app-state
+(add-watch auth-state :auth-state-watcher
+  (fn [key atom old-state new-state]
+      (if (and (not (= old-state new-state)) (= new-state "AUTHENTICATED")) (request-app-state))))
+
+; initiate the request for the current authentication state
+(defn request-authentication-state []
+  (api-request {:auth ""}))
 
 ; submit the request to log out
 (defn submit-logout-request []
-    (api-request {:params {:logout true} :handler update-auth-state-handler}))
+    (api-request {:logout true}))
 
 ; submit the request to log in
 (defn submit-user-pass-form [un pw]
   ; tell the server the username and password to create pass/log in
-  (api-request {:params {:auth true :username @un :password @pw} :handler update-auth-state-handler}))
+  (api-request {:auth true :username @un :password @pw}))
 
 ; redirect to the longin page
 (defn redirect [url]
   (set! (-> js/document .-location .-href) url))
+
+;; -------------------------
+;; data sync
+
+; watch the app-state atom for changes and write-back to the server on change
+(add-watch app-state :app-state-watcher
+  (fn [key atom old-state new-state]
+    (if (not (= old-state new-state))
+      (print "Writing new app-state to localstorage and the server:")
+      (print new-state)
+      (remember! "app-state" new-state)
+      (api-request {:state {:app-state new-state}}))))
 
 ;; -------------------------
 ;; Components
@@ -127,7 +178,7 @@
         (if (= a "AUTH_UNKNOWN") (component-loader))
         ; the actual state flow
         (case a
-          "AUTH_NOT_FOUND" (component-setup-server-info)
+          "AUTH_SERVER_NOT_FOUND" (component-setup-server-info)
           "AUTH_NO_FILE" (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
           "AUTH_FAILED" [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
           "AUTH_FILE_CREATED" [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
@@ -175,5 +226,5 @@
   (mount-root))
 
 ; make the request to get our state from the server
-(request-state)
+(request-authentication-state)
 
