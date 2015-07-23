@@ -74,6 +74,27 @@ body {
   font-size: 0.5em;
 }
 
+.buttonbar {
+  text-align: right;
+}
+
+.buttonbar a {
+  margin: 0.25em;
+  color: #aaa;
+}
+
+.spin-2x {
+  -webkit-animation: fa-spin 0.5s infinite linear normal none running;
+  -moz-animation: fa-spin 0.5s infinite linear normal none running;
+  -o-animation: fa-spin 0.5s infinite linear normal none running;
+  animation: fa-spin 0.5s infinite linear normal none running;
+}
+
+.buttonbar a:hover {
+  text-decoration: none;
+  color: #09f;
+}
+
 .firstrun {
   padding-top: 1em;
 }

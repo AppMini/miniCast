@@ -16,6 +16,8 @@
 (defonce errors (atom []))
 ; is the user logged in?
 (defonce auth-state (atom "AUTH_UNKNOWN"))
+; count of urls currently in the syncing state
+(defonce urls-syncing (atom 0))
 
 (enable-console-print!)
 
@@ -121,6 +123,16 @@
       (remember! "app-state" new-state)
       (api-request {:state {:app-state new-state}}))))
 
+; make calls to the podcast endpoints one by one
+(defn sync-urls [syncing]
+  (go
+    (if (= @syncing 0)
+      (reset! syncing 3))
+    (print @syncing)
+    (swap! syncing dec)
+    (print @syncing)
+    ))
+
 ;; -------------------------
 ;; Components
 
@@ -149,8 +161,9 @@
 
 (defn component-auth-configured []
   [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
-    [:button {:on-click submit-logout-request} "Logout"]
-    [:button {:on-click (fn [] (redirect "#/"))} "Ok"]])
+    [:div {:class "buttonbar"}
+      [:button {:on-click submit-logout-request} "Logout"]
+      [:button {:on-click (fn [] (redirect "#/"))} "Ok"]]])
 
 (defn component-setup-server-info []
   [:div [:p {:class "error"} "Could not contact the server. Please install the " [:a {:href "https://github.com/chr15m/pellet"} "pellet"] " server into a folder called 'server'." [:p "If you're using git then you should be able to run:"] [:pre [:code "git submodule init\n"  "git submodule update"] ] [:p "Or clone the repository again using:"] [:code "git clone --recursive https://github.com/chr15m/miniCast"]]])
@@ -161,7 +174,9 @@
 (defn home-page []
   (if (case @auth-state "AUTHENTICATED" true nil true false)
     (fn []
-      [:div "Home page"])
+      [:div {:class "buttonbar fa-2x"}
+        [:a {:href "#" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
+        [:a {:href "#/sync-config"} [:i {:class "fa fa-cog"}]]])
     ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
       (redirect "#/sync-config")
