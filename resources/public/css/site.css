@@ -9,6 +9,10 @@ body {
   line-height: 1.5em;
 }
 
+input {
+  font-size: 1.25em;
+}
+
 .fog {
   position: fixed;
   top: 0px;
@@ -78,9 +82,12 @@ body {
   text-align: right;
 }
 
-.buttonbar a {
+button {
   margin: 0.25em;
   color: #aaa;
+  border: 0px;
+  background: transparent;
+  font-size: 2em;
 }
 
 .spin-2x {
@@ -90,7 +97,7 @@ body {
   animation: fa-spin 0.5s infinite linear normal none running;
 }
 
-.buttonbar a:hover {
+button:hover {
   text-decoration: none;
   color: #09f;
 }
@@ -129,13 +136,18 @@ p {
   font-size: 11px;
 }
 
-button {
-  min-width: 5em;
-}
-
 .tick {
   color: green;
   margin-right: 0.5em;
+}
+
+input.url {
+  width: 85%;
+  float: left;
+  margin-top: 0.5em;
+}
+
+button.add-url {
 }
 
 /*** Podcast things ***/

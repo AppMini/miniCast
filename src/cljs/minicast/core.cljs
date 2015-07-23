@@ -130,8 +130,7 @@
       (reset! syncing 3))
     (print @syncing)
     (swap! syncing dec)
-    (print @syncing)
-    ))
+    (print @syncing)))
 
 ;; -------------------------
 ;; Components
@@ -157,16 +156,28 @@
        [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
        [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-       [:button {:on-click #(submit-user-pass-form un pw)} "Go"]]]))
+       [:button {:on-click #(submit-user-pass-form un pw)} [:i {:class "fa fa-check"}]]]]))
 
 (defn component-auth-configured []
-  [:div [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]
+  [:div
     [:div {:class "buttonbar"}
-      [:button {:on-click submit-logout-request} "Logout"]
-      [:button {:on-click (fn [] (redirect "#/"))} "Ok"]]])
+      [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]
+      [:button {:title "home" :on-click #(redirect "#/")} [:i {:class "fa fa-home"}]]
+     
+     ]
+    [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
 
 (defn component-setup-server-info []
   [:div [:p {:class "error"} "Could not contact the server. Please install the " [:a {:href "https://github.com/chr15m/pellet"} "pellet"] " server into a folder called 'server'." [:p "If you're using git then you should be able to run:"] [:pre [:code "git submodule init\n"  "git submodule update"] ] [:p "Or clone the repository again using:"] [:code "git clone --recursive https://github.com/chr15m/miniCast"]]])
+
+(let [show-add-url-box (atom false) url-to-add (atom "")]
+  (defn component-urls-config []
+    [:div {:class "buttonbar"}
+      [:button {:title "add podcast" :on-click #(swap! show-add-url-box not)} [:i {:class (str "fa " (if @show-add-url-box "fa-close" "fa-plus"))}]]
+      (if @show-add-url-box
+        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}])
+     
+     ]))
 
 ;; -------------------------
 ;; Views
@@ -174,9 +185,9 @@
 (defn home-page []
   (if (case @auth-state "AUTHENTICATED" true nil true false)
     (fn []
-      [:div {:class "buttonbar fa-2x"}
-        [:a {:href "#" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
-        [:a {:href "#/sync-config"} [:i {:class "fa fa-cog"}]]])
+      [:div {:class "buttonbar"}
+        [:button {:title "refresh" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
+        [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]])
     ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
       (redirect "#/sync-config")
@@ -202,7 +213,12 @@
           "AUTHENTICATED" (component-auth-configured)
           nil (component-auth-configured)
           nil)
-        [:div {:class "debug"} "Debug: " a]]))
+        [:div {:class "debug"} "Debug: " a]
+        ; if logged in show url configuration
+        (case a
+          "AUTHENTICATED" (component-urls-config)
+          nil (component-urls-config)
+          nil)]))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
