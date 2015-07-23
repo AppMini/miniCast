@@ -156,15 +156,14 @@
        [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
        [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
-       [:button {:on-click #(submit-user-pass-form un pw)} [:i {:class "fa fa-check"}]]]]))
+       [:div {:class "buttonbar"}
+         [:button {:on-click #(submit-user-pass-form un pw)} [:i {:class "fa fa-check"}]]]]]))
 
 (defn component-auth-configured []
   [:div
     [:div {:class "buttonbar"}
       [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]
-      [:button {:title "home" :on-click #(redirect "#/")} [:i {:class "fa fa-home"}]]
-     
-     ]
+      [:button {:title "home" :on-click #(redirect "#/")} [:i {:class "fa fa-home"}]]]
     [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
 
 (defn component-setup-server-info []
@@ -175,9 +174,7 @@
     [:div {:class "buttonbar"}
       [:button {:title "add podcast" :on-click #(swap! show-add-url-box not)} [:i {:class (str "fa " (if @show-add-url-box "fa-close" "fa-plus"))}]]
       (if @show-add-url-box
-        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}])
-     
-     ]))
+        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}])]))
 
 ;; -------------------------
 ;; Views
@@ -206,10 +203,10 @@
         (case a
           "AUTH_SERVER_NOT_FOUND" (component-setup-server-info)
           "AUTH_NO_FILE" (component-user-pass "firstrun" "No authentication has been set up yet. Create a new username and password:")
-          "AUTH_FAILED" [:div [:p "Incorrect username/password."] (component-user-pass "login" "Login:")]
-          "AUTH_FILE_CREATED" [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "Login:")]
-          "AUTH_NO_CREDENTIALS" (component-user-pass "login" "Login:")
-          "AUTH_LOGGED_OUT" [:div [:p "You have been logged out."] (component-user-pass "login" "Login:")]
+          "AUTH_FAILED" [:div [:p "Incorrect username/password."] (component-user-pass "login" "")]
+          "AUTH_FILE_CREATED" [:div [:p {:class "info"} "Authentication file created successfully."] (component-user-pass "login" "")]
+          "AUTH_NO_CREDENTIALS" (component-user-pass "login" "")
+          "AUTH_LOGGED_OUT" [:div [:p "You have been logged out."] (component-user-pass "login" "")]
           "AUTHENTICATED" (component-auth-configured)
           nil (component-auth-configured)
           nil)
