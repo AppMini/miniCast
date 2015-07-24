@@ -122,10 +122,11 @@
 (add-watch app-state :app-state-watcher
   (fn [key atom old-state new-state]
     (if (not (= old-state new-state))
-      (print "Writing new app-state to localstorage and the server:")
-      (print new-state)
-      (remember! "app-state" new-state)
-      (api-request {:state {:app-state new-state}}))))
+      (do
+        (print "Writing new app-state to localstorage and the server:")
+        (print new-state)
+        (remember! "app-state" new-state)
+        (api-request {:state {:app-state new-state}})))))
 
 ; make calls to the podcast endpoints one by one
 (defn sync-urls [syncing]
