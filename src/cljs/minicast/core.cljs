@@ -57,29 +57,29 @@
             (= (:status result) 0))
           (reset! auth-state "AUTH_SERVER_NOT_FOUND")
       
-      ; if we got a special error response from the API
-      (contains? (get-body ok result) "api-error")
-        (let [s (get (get-body ok result) "api-error")]
-          (if (= (.indexOf s "AUTH") 0)
-            (reset! auth-state s)
-            (log-error (str "Error talking to the server: " s " see console for more details."))))
+        ; if we got a special error response from the API
+        (contains? (get-body ok result) "api-error")
+          (let [s (get (get-body ok result) "api-error")]
+            (if (= (.indexOf s "AUTH") 0)
+              (reset! auth-state s)
+              (log-error (str "Error talking to the server: " s " see console for more details."))))
       
-      ; if we got a special success response from the API
-      (contains? (get-body ok result) "api")
-        (let [s (get (get-body ok result) "api")]
-          (if (= (.indexOf s "AUTH") 0)
-            (reset! auth-state s)
-            (print "API success:" s)))
-      
-      ; if we got a legitimate state
-      true
-        (let [new-app-state (get-body ok result)]
-          (if (and (not (nil? new-app-state)) (contains? new-app-state :app-state))
-            (do
-              ; TODO: merge the existing state (from localstorage) with server state
-              ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
-              (print "Updating state to" new-app-state)
-              (reset! app-state (:app-state new-app-state)))))))))
+        ; if we got a special success response from the API
+        (contains? (get-body ok result) "api")
+          (let [s (get (get-body ok result) "api")]
+            (if (= (.indexOf s "AUTH") 0)
+              (reset! auth-state s)
+              (print "API success:" s)))
+        
+        ; if we got a legitimate state
+        true
+          (let [new-app-state (get-body ok result)]
+            (if (and (not (nil? new-app-state)) (contains? new-app-state :app-state))
+              (do
+                ; TODO: merge the existing state (from localstorage) with server state
+                ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
+                (print "Updating state to" new-app-state)
+                (reset! app-state (:app-state new-app-state)))))))))
 
 ; unified interface for access to our api
 (defn api-request [params & callback]
