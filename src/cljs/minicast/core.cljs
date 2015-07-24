@@ -60,12 +60,16 @@
       ; if we got a special error response from the API
       (contains? (get-body ok result) "api-error")
         (let [s (get (get-body ok result) "api-error")]
-          (reset! auth-state s))
+          (if (= (.indexOf s "AUTH") 0)
+            (reset! auth-state s)
+            (log-error (str "Error talking to the server: " s " see console for more details."))))
       
       ; if we got a special success response from the API
       (contains? (get-body ok result) "api")
         (let [s (get (get-body ok result) "api")]
-          (reset! auth-state s))
+          (if (= (.indexOf s "AUTH") 0)
+            (reset! auth-state s)
+            (print "API success:" s)))
       
       ; if we got a legitimate state
       true
