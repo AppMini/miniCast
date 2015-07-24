@@ -14,10 +14,10 @@
 (defonce app-state (atom (recall "app-state")))
 ; collect errors to show to the user
 (defonce errors (atom []))
-; is the user logged in?
-(defonce auth-state (atom "AUTH_UNKNOWN"))
 ; count of urls currently in the syncing state
 (defonce urls-syncing (atom 0))
+; is the user logged in?
+(def auth-state (atom "AUTH_UNKNOWN"))
 
 (enable-console-print!)
 
@@ -71,15 +71,14 @@
               (reset! auth-state s)
               (print "API success:" s)))
       
-        ; if we got a legitimate state
-        true
-          (let [new-app-state (get-body ok result)]
-            (if (and (not (nil? new-app-state)) (contains? new-app-state :app-state))
-              (do
-                ; TODO: merge the existing state (from localstorage) with server state
-                ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
-                (print "Updating state to" new-app-state)
-                (reset! app-state (:app-state new-app-state)))))))))
+      ; if we got a legitimate state
+      true
+        (let [new-app-state (get-body ok result)]
+          (if (and (not (nil? new-app-state)) (contains? new-app-state "app-state"))
+            (do
+              ; TODO: merge the existing state (from localstorage) with server state
+              ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
+              (reset! app-state (new-app-state "app-state")))))))))
 
 ; unified interface for access to our api
 (defn api-request [params & config]
