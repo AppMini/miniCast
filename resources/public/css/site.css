@@ -141,13 +141,14 @@ p {
   margin-right: 0.5em;
 }
 
-input.url {
+.url {
   width: 85%;
   float: left;
   margin-top: 0.5em;
 }
 
-button.add-url {
+li {
+  list-style-type: none;
 }
 
 /*** Podcast things ***/

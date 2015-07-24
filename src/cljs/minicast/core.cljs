@@ -112,6 +112,18 @@
   ; tell the server the username and password to create pass/log in
   (api-request {:auth true :username @un :password @pw}))
 
+; swap! to add a uri to app-state
+(defn add-uri [old-app-state uri]
+  (let [uri-struct {:timestamp (.getTime (js/Date.)) :uri uri}]
+    (if (nil? (:uris old-app-state))
+      (assoc-in old-app-state [:uris] [uri-struct])
+      (assoc-in old-app-state [:uris (count (:uris old-app-state))] uri-struct))))
+
+; swap! to remove a uri from app-state
+(defn remove-uri-by-idx [idx]
+  
+  )
+
 ; redirect to the longin page
 (defn redirect [url]
   (set! (-> js/document .-location .-href) url))
@@ -175,12 +187,20 @@
 (defn component-setup-server-info []
   [:div [:p {:class "error"} "Could not contact the server. Please install the " [:a {:href "https://github.com/chr15m/pellet"} "pellet"] " server into a folder called 'server'." [:p "If you're using git then you should be able to run:"] [:pre [:code "git submodule init\n"  "git submodule update"] ] [:p "Or clone the repository again using:"] [:code "git clone --recursive https://github.com/chr15m/miniCast"]]])
 
-(let [show-add-url-box (atom false) url-to-add (atom "")]
+(defn component-uri-listitem [idx item]
+  [:li {:key (str "uri-listitem-" idx) :class "buttonbar"}
+    [:button {:title "remove" :on-click #(swap! app-state remove-uri-by-idx idx)} [:i {:class "fa fa-close"}]]
+    [:div {:class "url" :type "uri"} (:uri item)]])
+
+(let [url-to-add (atom "")]
   (defn component-urls-config []
-    [:div {:class "buttonbar"}
-      [:button {:title "add podcast" :on-click #(swap! show-add-url-box not)} [:i {:class (str "fa " (if @show-add-url-box "fa-close" "fa-plus"))}]]
-      (if @show-add-url-box
-        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}])]))
+    [:div
+      [:div {:class "buttonbar"}
+        [:button {:title "add podcast" :on-click #(swap! app-state add-uri @url-to-add)} [:i {:class "fa fa-check"}]]
+        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}]]
+      [:ul
+        (map-indexed component-uri-listitem (:uris @app-state))]
+    ]))
 
 ;; -------------------------
 ;; Views
