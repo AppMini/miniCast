@@ -6,7 +6,7 @@
               [secretary.core :as secretary :include-macros true]
               [goog.events :as events]
               [goog.history.EventType :as EventType]
-              [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format]]
+              [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format url-request-format]]
               [cljs.core.async :refer [<!]])
     (:import goog.History))
 
@@ -70,7 +70,7 @@
             (if (= (.indexOf s "AUTH") 0)
               (reset! auth-state s)
               (print "API success:" s)))
-        
+      
         ; if we got a legitimate state
         true
           (let [new-app-state (get-body ok result)]
@@ -82,8 +82,9 @@
                 (reset! app-state (:app-state new-app-state)))))))))
 
 ; unified interface for access to our api
-(defn api-request [params & callback]
-  (ajax-request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format) :handler (updated-server-state-handler params)} {:params params})))
+(defn api-request [params & config]
+  (let [request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format) :handler (updated-server-state-handler params)} {:params params} (if (count config) (first config) {}))]
+    (ajax-request request)))
 
 ; special call to the proxy request endpoint
 (defn proxy-request [url callback]
@@ -126,7 +127,7 @@
         (print "Writing new app-state to localstorage and the server:")
         (print new-state)
         (remember! "app-state" new-state)
-        (api-request {:state {:app-state new-state}})))))
+        (api-request {:state (js/JSON.stringify (clj->js {:app-state new-state}))} {:method :post :format (url-request-format)})))))
 
 ; make calls to the podcast endpoints one by one
 (defn sync-urls [syncing]
