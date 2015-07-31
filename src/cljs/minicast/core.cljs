@@ -76,6 +76,7 @@
         (let [new-app-state (get-body ok result)]
           (if (and (not (nil? new-app-state)) (contains? new-app-state "app-state"))
             (do
+              (print "new-app-state" new-app-state)
               ; TODO: merge the existing state (from localstorage) with server state
               ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
               (reset! app-state (new-app-state "app-state")))))))))
@@ -113,10 +114,10 @@
 
 ; swap! to add a uri to app-state
 (defn add-uri [old-app-state uri]
-  (let [uri-struct {:timestamp (.getTime (js/Date.)) :uri uri}]
-    (if (nil? (:uris old-app-state))
-      (assoc-in old-app-state [:uris] [uri-struct])
-      (assoc-in old-app-state [:uris (count (:uris old-app-state))] uri-struct))))
+  (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
+    (if (nil? (old-app-state "uris"))
+      (assoc-in old-app-state ["uris"] [uri-struct])
+      (assoc-in old-app-state ["uris" (count (old-app-state "uris"))] uri-struct))))
 
 ; swap! to remove a uri from app-state
 (defn remove-uri-by-idx [idx]
@@ -189,7 +190,7 @@
 (defn component-uri-listitem [idx item]
   [:li {:key (str "uri-listitem-" idx) :class "buttonbar"}
     [:button {:title "remove" :on-click #(swap! app-state remove-uri-by-idx idx)} [:i {:class "fa fa-close"}]]
-    [:div {:class "url" :type "uri"} (:uri item)]])
+    [:div {:class "url" :type "uri"} (item "uri")]])
 
 (let [url-to-add (atom "")]
   (defn component-urls-config []
@@ -198,7 +199,7 @@
         [:button {:title "add podcast" :on-click #(swap! app-state add-uri @url-to-add)} [:i {:class "fa fa-check"}]]
         [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}]]
       [:ul
-        (map-indexed component-uri-listitem (:uris @app-state))]
+        (map-indexed component-uri-listitem (@app-state "uris"))]
     ]))
 
 ;; -------------------------
