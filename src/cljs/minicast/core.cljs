@@ -199,7 +199,7 @@
         [:button {:title "add podcast" :on-click (fn [ev] (swap! app-state add-uri @url-to-add) (reset! url-to-add ""))} [:i {:class "fa fa-check"}]]
         [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}]]
       [:ul
-        (map-indexed component-uri-listitem (@app-state "uris"))]]))
+        (map-indexed component-uri-listitem (reverse (@app-state "uris")))]]))
 
 ;; -------------------------
 ;; Views
