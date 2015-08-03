@@ -39,6 +39,22 @@
 ; get the body of the returned request regardless of whether it was an error or not
 (defn get-body [ok result] (if ok result (:response result)))
 
+; swap! to remove a uri from app-state
+(defn remove-uri [old-app-state uri]
+  (update-in old-app-state ["uris"]
+             (fn [old-uris] (vec (remove (fn [i] (= (i "uri") uri)) old-uris)))))
+
+; swap! to add a uri to app-state
+(defn add-uri [old-app-state uri]
+  (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
+    (if (nil? (old-app-state "uris"))
+      ; just jam a completely new one in there
+      (assoc-in old-app-state ["uris"] [uri-struct])
+      ; if we already have this one, first remove it
+      (let [old-app-state-no-dups (remove-uri old-app-state uri)]
+        ; then add the new one to replace it
+        (assoc-in old-app-state-no-dups ["uris" (count (old-app-state-no-dups "uris"))] uri-struct)))))
+
 ; update the authentication state token after a request
 (defn updated-server-state-handler [params]
   (fn [[ok result]]
@@ -121,22 +137,6 @@
         "night"
         ; otherwise toggle
         (if (= scheme "day") "night" "day")))))
-
-; swap! to remove a uri from app-state
-(defn remove-uri [old-app-state uri]
-  (update-in old-app-state ["uris"]
-             (fn [old-uris] (vec (remove (fn [i] (= (i "uri") uri)) old-uris)))))
-
-; swap! to add a uri to app-state
-(defn add-uri [old-app-state uri]
-  (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
-    (if (nil? (old-app-state "uris"))
-      ; just jam a completely new one in there
-      (assoc-in old-app-state ["uris"] [uri-struct])
-      ; if we already have this one, first remove it
-      (let [old-app-state-no-dups (remove-uri old-app-state uri)]
-        ; then add the new one to replace it
-        (assoc-in old-app-state-no-dups ["uris" (count (old-app-state-no-dups "uris"))] uri-struct)))))
 
 ; redirect to the login page
 (defn redirect [url]
