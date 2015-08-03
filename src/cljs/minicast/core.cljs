@@ -112,6 +112,16 @@
   ; tell the server the username and password to create pass/log in
   (api-request {:auth true :username @un :password @pw}))
 
+; toggle the color scheme
+(defn toggle-scheme [old-app-state]
+  (assoc-in old-app-state ["scheme"]
+    (let [scheme (old-app-state "scheme")]
+      (if (nil? scheme)
+        ; default first value is 'night'
+        "night"
+        ; otherwise toggle
+        (if (= scheme "day") "night" "day")))))
+
 ; swap! to add a uri to app-state
 (defn add-uri [old-app-state uri]
   (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
@@ -180,6 +190,7 @@
 (defn component-auth-configured []
   [:div
     [:div {:class "buttonbar"}
+      [:button {:title "scheme" :on-click #(swap! app-state toggle-scheme)} [:i {:class "fa fa-glass"}]]
       [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]
       [:button {:title "home" :on-click #(redirect "#/")} [:i {:class "fa fa-home"}]]]
     [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
@@ -207,9 +218,10 @@
 (defn home-page []
   (if (case @auth-state "AUTHENTICATED" true nil true false)
     (fn []
-      [:div {:class "buttonbar"}
-        [:button {:title "refresh" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
-        [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]])
+      [:div {:class "main"}
+        [:div {:class "buttonbar"}
+          [:button {:title "refresh" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
+          [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]]])
     ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
       (redirect "#/sync-config")
@@ -217,7 +229,7 @@
 
 (defn sync-config-page []
   (let [a @auth-state]
-      [:div
+      [:div {:class "main"}
         ; display any errors received to the user
         (component-errors)
         ; display the logo on this configuration page
@@ -243,7 +255,7 @@
           nil)]))
 
 (defn current-page []
-  [:div [(session/get :current-page)]])
+  [:div {:class (@app-state "scheme")} [(session/get :current-page)]])
 
 ;; -------------------------
 ;; Routes
