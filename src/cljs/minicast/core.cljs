@@ -196,7 +196,7 @@
   (defn component-urls-config []
     [:div
       [:div {:class "buttonbar"}
-        [:button {:title "add podcast" :on-click #(swap! app-state add-uri @url-to-add)} [:i {:class "fa fa-check"}]]
+        [:button {:title "add podcast" :on-click (fn [ev] (swap! app-state add-uri @url-to-add) (reset! url-to-add ""))} [:i {:class "fa fa-check"}]]
         [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}]]
       [:ul
         (map-indexed component-uri-listitem (@app-state "uris"))]]))
