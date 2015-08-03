@@ -41,6 +41,12 @@ input {
   font-size: 1.25em;
 }
 
+.url-count {
+  display: inline-block;
+  font-size: 0.5em;
+  min-width: 2em;
+}
+
 .fog {
   position: fixed;
   top: 0px;

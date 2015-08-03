@@ -7,7 +7,7 @@
               [goog.events :as events]
               [goog.history.EventType :as EventType]
               [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format url-request-format]]
-              [cljs.core.async :refer [<!]])
+              [cljs.core.async :refer [<! chan close! put!]])
     (:import goog.History))
 
 ; set the app state from last-saved localstorage
@@ -15,7 +15,7 @@
 ; collect errors to show to the user
 (defonce errors (atom []))
 ; count of urls currently in the syncing state
-(defonce urls-syncing (atom 0))
+(defonce urls-syncing (atom nil))
 ; is the user logged in?
 (def auth-state (atom "AUTH_UNKNOWN"))
 
@@ -108,7 +108,7 @@
 
 ; special call to the proxy request endpoint
 (defn proxy-request [url callback]
-  (ajax-request {:uri server-url :params {:proxy url} :method get :with-credentials true :response-format (raw-response-format) :handler callback}))
+  (ajax-request {:uri server-url :params {:proxy url} :method :get :with-credentials true :response-format (raw-response-format) :handler callback}))
 
 ; initiate the request for user's current state
 (defn request-app-state []
@@ -149,6 +149,17 @@
 ;; -------------------------
 ;; data sync
 
+; wrap callbacks in a channel
+; http://www.lispcast.com/core-async-code-style
+(defn <<< [f & args]
+  (let [c (chan)]
+    (apply f (concat args [(fn [x]
+                             (if (or (nil? x)
+                                     (undefined? x))
+                                   (close! c)
+                                   (put! c x)))]))
+    c))
+
 ; watch the app-state atom for changes and write-back to the server on change
 (add-watch app-state :app-state-watcher
   (fn [key atom old-state new-state]
@@ -161,12 +172,17 @@
 
 ; make calls to the podcast endpoints one by one
 (defn sync-urls [syncing]
-  (go
-    (if (= @syncing 0)
-      (reset! syncing 3))
-    (print @syncing)
-    (swap! syncing dec)
-    (print @syncing)))
+  ; set up our array of syncing things
+  (doseq [u (@app-state "uris")] (swap! syncing conj (u "uri")))
+  (print "syncing" @syncing)
+  ; go nuts with the async requests
+  (let [requests (map (fn [u] [u (<<< proxy-request u)]) @syncing)]
+    (print "chans" requests)
+    (go
+      (doseq [[url chan] requests]
+        (let [result (<! chan)]
+          (print url result)
+          (swap! syncing (fn [old] (remove (fn [x] (= x url)) old))))))))
 
 ;; -------------------------
 ;; Components
@@ -228,7 +244,10 @@
     (fn []
       [:div {:class "main"}
         [:div {:class "buttonbar"}
-          [:button {:title "refresh" :on-click #(if (= @urls-syncing 0) (sync-urls urls-syncing))} [:i {:class (str "fa fa-refresh" (if (> @urls-syncing 0) " fa-spin spin-2x" ""))}]]
+          (if (> (count (@app-state "uris")) 0)
+            [:button {:title "refresh" :on-click #(if (= (count @urls-syncing) 0) (sync-urls urls-syncing))}
+              [:i {:class (str "fa fa-refresh" (if (> (count @urls-syncing) 0) " fa-spin spin-2x" ""))}]
+              [:span {:class "url-count"} (if (> (count @urls-syncing) 0) (count @urls-syncing))]])
           [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]]])
     ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
