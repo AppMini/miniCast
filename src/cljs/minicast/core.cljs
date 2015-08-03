@@ -55,6 +55,11 @@
         ; then add the new one to replace it
         (assoc-in old-app-state-no-dups ["uris" (count (old-app-state-no-dups "uris"))] uri-struct)))))
 
+; merge incoming app-state urls from the server with the ones we already have
+(defn merge-new-state [old-app-state new-app-state]
+  ;(update-in (merge old-app-state new-app-state) ["uris"] (old-app-state "uris"))
+  new-app-state)
+
 ; update the authentication state token after a request
 (defn updated-server-state-handler [params]
   (fn [[ok result]]
@@ -93,9 +98,8 @@
           (if (and (not (nil? new-app-state)) (contains? new-app-state "app-state"))
             (do
               (print "new-app-state" new-app-state)
-              ; TODO: merge the existing state (from localstorage) with server state
-              ; https://clojuredocs.org/clojure.core/assoc-in#example-548a3809e4b04e93c519ffa4
-              (reset! app-state (new-app-state "app-state")))))))))
+              ; merge the existing state (from localstorage) with server state
+              (swap! app-state merge-new-state (new-app-state "app-state")))))))))
 
 ; unified interface for access to our api
 (defn api-request [params & config]
