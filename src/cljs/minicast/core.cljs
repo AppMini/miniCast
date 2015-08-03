@@ -191,7 +191,7 @@
   [:div
     [:div {:class "buttonbar"}
       [:button {:title "home" :on-click #(redirect "#/") :id "settings-home"} [:i {:class "fa fa-arrow-circle-left"}]] 
-      [:button {:title "scheme" :on-click #(swap! app-state toggle-scheme)} [:i {:class "fa fa-glass"}]]
+      [:button {:title "scheme" :on-click #(swap! app-state toggle-scheme)} [:i {:class (str "fa " (if (= (@app-state "scheme") "night") "fa-sun-o" "fa-glass"))}]]
       [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]]
     [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
 
