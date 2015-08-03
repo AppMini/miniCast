@@ -122,17 +122,21 @@
         ; otherwise toggle
         (if (= scheme "day") "night" "day")))))
 
+; swap! to remove a uri from app-state
+(defn remove-uri [old-app-state uri]
+  (update-in old-app-state ["uris"]
+             (fn [old-uris] (vec (remove (fn [i] (= (i "uri") uri)) old-uris)))))
+
 ; swap! to add a uri to app-state
 (defn add-uri [old-app-state uri]
   (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
     (if (nil? (old-app-state "uris"))
+      ; just jam a completely new one in there
       (assoc-in old-app-state ["uris"] [uri-struct])
-      (assoc-in old-app-state ["uris" (count (old-app-state "uris"))] uri-struct))))
-
-; swap! to remove a uri from app-state
-(defn remove-uri-item [old-app-state item]
-  (update-in old-app-state ["uris"]
-             (fn [old-uris] (vec (remove (fn [i] (= (i "uri") (item "uri"))) old-uris)))))
+      ; if we already have this one, first remove it
+      (let [old-app-state-no-dups (remove-uri old-app-state uri)]
+        ; then add the new one to replace it
+        (assoc-in old-app-state-no-dups ["uris" (count (old-app-state-no-dups "uris"))] uri-struct)))))
 
 ; redirect to the login page
 (defn redirect [url]
@@ -200,7 +204,7 @@
 
 (defn component-uri-listitem [idx item]
   [:li {:key (str "uri-listitem-" idx) :class "buttonbar"}
-    [:button {:title "remove" :on-click #(swap! app-state remove-uri-item item)} [:i {:class "fa fa-close"}]]
+    [:button {:title "remove" :on-click #(swap! app-state remove-uri (item "uri"))} [:i {:class "fa fa-close"}]]
     [:div {:class "url" :type "uri"} (item "uri")]])
 
 (let [url-to-add (atom "")]
