@@ -191,7 +191,12 @@ p {
 .url {
   width: 85%;
   float: left;
-  margin-top: 0.5em;
+  margin-top: 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-overflow: ellipsis; 
+  font-size: 0.75em;
 }
 
 li {
