@@ -120,9 +120,9 @@
       (assoc-in old-app-state ["uris" (count (old-app-state "uris"))] uri-struct))))
 
 ; swap! to remove a uri from app-state
-(defn remove-uri-by-idx [idx]
-  
-  )
+(defn remove-uri-item [old-app-state item]
+  (update-in old-app-state ["uris"]
+             (fn [old-uris] (vec (remove (fn [i] (= (i "uri") (item "uri"))) old-uris)))))
 
 ; redirect to the login page
 (defn redirect [url]
@@ -189,7 +189,7 @@
 
 (defn component-uri-listitem [idx item]
   [:li {:key (str "uri-listitem-" idx) :class "buttonbar"}
-    [:button {:title "remove" :on-click #(swap! app-state remove-uri-by-idx idx)} [:i {:class "fa fa-close"}]]
+    [:button {:title "remove" :on-click #(swap! app-state remove-uri-item item)} [:i {:class "fa fa-close"}]]
     [:div {:class "url" :type "uri"} (item "uri")]])
 
 (let [url-to-add (atom "")]
