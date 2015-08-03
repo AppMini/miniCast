@@ -190,9 +190,9 @@
 (defn component-auth-configured []
   [:div
     [:div {:class "buttonbar"}
+      [:button {:title "home" :on-click #(redirect "#/") :id "settings-home"} [:i {:class "fa fa-arrow-circle-left"}]] 
       [:button {:title "scheme" :on-click #(swap! app-state toggle-scheme)} [:i {:class "fa fa-glass"}]]
-      [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]
-      [:button {:title "home" :on-click #(redirect "#/")} [:i {:class "fa fa-home"}]]]
+      [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]]
     [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
 
 (defn component-setup-server-info []
