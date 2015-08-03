@@ -10,6 +10,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
   line-height: 1.5em;
+  background-color: #333;
 }
 
 #app {
@@ -21,6 +22,10 @@ body {
   margin-left: auto;
   margin-right: auto;
   height: 100%;
+}
+
+#app > div {
+  background-color: white;
 }
 
 #app > div.night {
@@ -68,6 +73,11 @@ input {
 
 div.night .logo {
   color: #ffffff;
+}
+
+#app > .loader-inner {
+  background-color: #333 !important;
+  padding-top: 2em;
 }
 
 .loader-inner {
