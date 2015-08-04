@@ -7,6 +7,7 @@
               [goog.events :as events]
               [goog.history.EventType :as EventType]
               [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format url-request-format]]
+              [tubax.core :refer [xml->clj]]
               [cljs.core.async :refer [<! chan close! put!]])
     (:import goog.History))
 
@@ -108,7 +109,7 @@
 
 ; special call to the proxy request endpoint
 (defn proxy-request [url callback]
-  (ajax-request {:uri server-url :params {:proxy url} :method :get :with-credentials true :response-format (raw-response-format) :handler callback}))
+  (ajax-request {:uri server-url :params {:proxy url} :method :get :with-credentials true :response-format (json-response-format) :handler callback}))
 
 ; initiate the request for user's current state
 (defn request-app-state []
@@ -174,14 +175,21 @@
 (defn sync-urls [syncing]
   ; set up our array of syncing things
   (doseq [u (@app-state "uris")] (swap! syncing conj (u "uri")))
-  (print "syncing" @syncing)
-  ; go nuts with the async requests
+  ; go nuts with the async ajax requests
   (let [requests (map (fn [u] [u (<<< proxy-request u)]) @syncing)]
-    (print "chans" requests)
     (go
       (doseq [[url chan] requests]
-        (let [result (<! chan)]
-          (print url result)
+        (let [[ok response] (<! chan)]
+          ; check the ajax result code
+          (if ok
+            (let [rss (xml->clj response {:strict false})
+                  contents (get-in rss [:content 0 :content])
+                  items (filter #(= (% :tag) :item) contents)
+                  images (filter #(= (% :tag) :image) contents)]
+              (print url)
+              (.log js/console (clj->js items)))
+            (log-error (url "Error fetching " url)))
+          ; remove the URL from our pending URLs
           (swap! syncing (fn [old] (remove (fn [x] (= x url)) old))))))))
 
 ;; -------------------------
