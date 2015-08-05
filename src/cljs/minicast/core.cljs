@@ -147,6 +147,10 @@
 (defn redirect [url]
   (set! (-> js/document .-location .-href) url))
 
+; find certain tags within an xml structures
+(defn find-tag [xml tag]
+  (filter #(= (% :tag) tag) xml))
+
 ;; -------------------------
 ;; data sync
 
@@ -184,9 +188,8 @@
           (if ok
             (let [rss (xml->clj response {:strict false})
                   contents (get-in rss [:content 0 :content])
-                  items (filter #(= (% :tag) :item) contents)
-                  images (filter #(= (% :tag) :image) contents)]
-              (print url)
+                  items (-> contents (find-tag :item))]
+              (print "image" (-> contents (find-tag :image) first :content (find-tag :url) first :content first))
               (.log js/console (clj->js items)))
             (log-error (url "Error fetching " url)))
           ; remove the URL from our pending URLs
