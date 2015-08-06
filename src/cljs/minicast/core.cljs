@@ -151,6 +151,14 @@
 (defn find-tag [xml tag]
   (filter #(= (% :tag) tag) xml))
 
+; find the image tag in a podcast rss
+(defn podcast-find-image [contents]
+  (some identity [
+    ; look for image tag
+    (-> contents (find-tag :image) first :content (find-tag :url) first :content first)
+    ; look for itunes image tag
+    (-> contents (find-tag :itunes:image) first :attributes :href)]))
+
 ;; -------------------------
 ;; data sync
 
@@ -188,9 +196,9 @@
           (if ok
             (let [rss (xml->clj response {:strict false})
                   contents (get-in rss [:content 0 :content])
-                  items (-> contents (find-tag :item))]
-              (print "image" (-> contents (find-tag :image) first :content (find-tag :url) first :content first))
-              (.log js/console (clj->js items)))
+                  items (-> contents (find-tag :item))
+                  image (podcast-find-image contents)]
+                  (print "image" image))
             (log-error (url "Error fetching " url)))
           ; remove the URL from our pending URLs
           (swap! syncing (fn [old] (remove (fn [x] (= x url)) old))))))))
