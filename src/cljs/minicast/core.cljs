@@ -45,6 +45,19 @@
   (update-in old-app-state ["uris"]
              (fn [old-uris] (vec (remove (fn [i] (= (i "uri") uri)) old-uris)))))
 
+; get index of the uri in the list of all of them
+(defn get-uri-index [uri]
+  (last (find (apply merge (map-indexed (fn [i e] {(e "uri") i}) (get-in @app-state ["uris"]))) uri)))
+
+; get the uri structure indexed on the uri
+(defn get-uri-map [uri]
+  (first (filter (fn [e] (= (e "uri") uri)) (get-in @app-state ["uris"]))))
+
+; updates some values on the map that contains the uri
+(defn update-uri [old-app-state uri & args]
+  (let [updated (merge (get-uri-map uri) (apply hash-map args))]
+    (assoc-in old-app-state ["uris" (get-uri-index uri)] updated)))
+
 ; swap! to add a uri to app-state
 (defn add-uri [old-app-state uri]
   (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
@@ -198,7 +211,7 @@
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
                   image (podcast-find-image contents)]
-                  (print "image" image))
+              (swap! app-state update-uri url "image-uri" image))
             (log-error (url "Error fetching " url)))
           ; remove the URL from our pending URLs
           (swap! syncing (fn [old] (remove (fn [x] (= x url)) old))))))))
@@ -244,7 +257,7 @@
 (defn component-uri-listitem [idx item]
   [:li {:key (str "uri-listitem-" idx) :class "buttonbar"}
     [:button {:title "remove" :on-click #(swap! app-state remove-uri (item "uri"))} [:i {:class "fa fa-close"}]]
-    [:div {:class "url" :type "uri"} (item "uri")]])
+    [:div {:class "url" :type "uri"} (if (item "image-uri") [:img {:class "podcast-logo-small" :src (item "image-uri")}]) (item "uri")]])
 
 (let [url-to-add (atom "")]
   (defn component-urls-config []

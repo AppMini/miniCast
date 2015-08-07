@@ -209,6 +209,11 @@ li {
   list-style-type: none;
 }
 
+.podcast-logo-small {
+  width: 32px;
+  float: left;
+}
+
 /*** Podcast things ***/
 
 .podcast_item {
