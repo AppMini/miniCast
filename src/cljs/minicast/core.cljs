@@ -8,6 +8,7 @@
               [goog.history.EventType :as EventType]
               [ajax.core :refer [GET POST ajax-request json-response-format raw-response-format url-request-format]]
               [tubax.core :refer [xml->clj]]
+              [cljs.pprint :refer [pprint]]
               [cljs.core.async :refer [<! chan close! put!]])
     (:import goog.History))
 
@@ -164,6 +165,10 @@
 (defn find-tag [xml tag]
   (filter #(= (% :tag) tag) xml))
 
+; get a particular item's tag value
+(defn get-item-tag [item tag]
+  (-> item :content (find-tag tag) first :content first))
+
 ; find the image tag in a podcast rss
 (defn podcast-find-image [contents]
   (or
@@ -203,7 +208,7 @@
   ; go nuts with the async ajax requests
   (let [requests (map (fn [u] [u (<<< proxy-request u)]) @syncing)]
     (go
-      (doseq [[url chan] requests]
+      (doseq [[uri chan] requests]
         (let [[ok response] (<! chan)]
           ; check the ajax result code
           (if ok
@@ -211,10 +216,30 @@
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
                   image (podcast-find-image contents)]
-              (swap! app-state update-uri url "image-uri" image))
-            (log-error (url "Error fetching " url)))
+              ; update the latest version of the podcast's reference image
+              (swap! app-state update-uri uri "image-uri" image)
+              ; ensure we have a list of podcasts in our app state
+              (if (nil? (@app-state "podcasts"))
+                ; just jam a completely new one in there
+                (swap! app-state assoc-in ["pdodcasts"] []))
+              ; add any new podcasts we find in the loop of items to our master list
+              (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (print "old-podcasts" old-podcasts) (print "new-podcasts" (vec new-podcasts)) (concat old-podcasts (vec new-podcasts)))
+                ; loop through all of the items we received
+                (for [i items]
+                  (let [guid (get-item-tag i :guid)]
+                    ; if we haven't got this guid already
+                    (if (= (count (filter (fn [e] (= (e "guid") guid)) (@app-state "podcasts"))) 0)
+                      ; add the podcast structure to our list of new ones
+                        {:guid guid
+                         :timestamp (js/Date. (get-item-tag i :pubdate))
+                         :title (get-item-tag i :title)
+                         :link (or (get-item-tag i :link) guid)
+                         :description (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description)) "\n"))
+                         :media (-> i :content (find-tag :enclosure) first :attributes)
+                         :duration (get-item-tag i :itunes:duration)})))))
+            (log-error ("Error fetching " uri)))
           ; remove the URL from our pending URLs
-          (swap! syncing (fn [old] (remove (fn [x] (= x url)) old))))))))
+          (swap! syncing (fn [old] (remove (fn [x] (= x uri)) old))))))))
 
 ;; -------------------------
 ;; Components
