@@ -210,8 +210,8 @@
     (go
       (doseq [[uri chan] requests]
         (let [[ok response] (<! chan)]
-          ; check the ajax result code
-          (if ok
+          ; check the ajax result code and sanity check for xml
+          (if (and ok (string? response))
             (let [rss (xml->clj response {:strict false})
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
@@ -224,20 +224,22 @@
                 (swap! app-state assoc-in ["pdodcasts"] []))
               ; add any new podcasts we find in the loop of items to our master list
               (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (print "old-podcasts" old-podcasts) (print "new-podcasts" (vec new-podcasts)) (concat old-podcasts (vec new-podcasts)))
-                ; loop through all of the items we received
-                (for [i items]
-                  (let [guid (get-item-tag i :guid)]
-                    ; if we haven't got this guid already
-                    (if (= (count (filter (fn [e] (= (e "guid") guid)) (@app-state "podcasts"))) 0)
-                      ; add the podcast structure to our list of new ones
-                        {:guid guid
-                         :timestamp (js/Date. (get-item-tag i :pubdate))
-                         :title (get-item-tag i :title)
-                         :link (or (get-item-tag i :link) guid)
-                         :description (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description)) "\n"))
-                         :media (-> i :content (find-tag :enclosure) first :attributes)
-                         :duration (get-item-tag i :itunes:duration)})))))
-            (log-error ("Error fetching " uri)))
+                ; filter out the nil values
+                (remove nil?
+                  ; loop through all of the items we received
+                  (for [i items]
+                    (let [guid (get-item-tag i :guid)]
+                      ; if we haven't got this guid already
+                      (if (= (count (filter (fn [e] (= (e "guid") guid)) (@app-state "podcasts"))) 0)
+                        ; add the podcast structure to our list of new ones
+                          {"guid" guid
+                           "timestamp" (js/Date. (get-item-tag i :pubdate))
+                           "title" (get-item-tag i :title)
+                           "link" (or (get-item-tag i :link) guid)
+                           "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description)) "\n"))
+                           "media" (-> i :content (find-tag :enclosure) first :attributes)
+                           "duration" (get-item-tag i :itunes:duration)}))))))
+            (log-error (str "Error fetching " uri)))
           ; remove the URL from our pending URLs
           (swap! syncing (fn [old] (remove (fn [x] (= x uri)) old))))))))
 
