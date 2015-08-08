@@ -166,11 +166,11 @@
 
 ; find the image tag in a podcast rss
 (defn podcast-find-image [contents]
-  (some identity [
+  (or
     ; look for image tag
     (-> contents (find-tag :image) first :content (find-tag :url) first :content first)
     ; look for itunes image tag
-    (-> contents (find-tag :itunes:image) first :attributes :href)]))
+    (-> contents (find-tag :itunes:image) first :attributes :href)))
 
 ;; -------------------------
 ;; data sync
