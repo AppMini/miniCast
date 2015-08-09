@@ -223,7 +223,7 @@
                 ; just jam a completely new one in there
                 (swap! app-state assoc-in ["pdodcasts"] []))
               ; add any new podcasts we find in the loop of items to our master list
-              (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (print "old-podcasts" old-podcasts) (print "new-podcasts" (vec new-podcasts)) (concat old-podcasts (vec new-podcasts)))
+              (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (reverse (sort-by #(% "timestamp") (concat old-podcasts (vec new-podcasts)))))
                 ; filter out the nil values
                 (remove nil?
                   ; loop through all of the items we received
