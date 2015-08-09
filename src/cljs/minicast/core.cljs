@@ -296,6 +296,27 @@
       [:ul
         (map-indexed component-uri-listitem (reverse (@app-state "uris")))]]))
 
+(let [podcast (atom nil) podcast-parent (atom nil)]
+  (defn component-podcasts []
+    [:div {:class "podcasts"}
+       (doall (for [p (@app-state "podcasts")]
+         (let [parent (get-uri-map (p "source-uri"))]
+            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "hello") (reset! podcast p) (reset! podcast-parent parent))}
+              [:div {:class "podcast_left"} [:div {:class "podcast_image"} [:img {:src (parent "image-uri")}]]]
+              [:div {:class "podcast_right"}
+                [:div {:class "podcast_name"} (parent "title")]
+                [:div {:class "podcast_title"} (p "title")]
+                [:div {:class "podcast_description"} (p "description")]]])))])
+
+  (defn component-podcast-playing []
+    (if @podcast
+      [:div {:class "podcast_playing"}
+        [:div {:class "podcast_playing_image"} [:img {:src (@podcast-parent "image-uri")}]]
+        [:div {:class "podcast_right"}
+          [:div {:class "podcast_name"} (@podcast-parent "title")]
+          [:div {:class "podcast_title"} (@podcast "title")]
+          [:audio {:src ((@podcast "media") "url") :controls true}]]])))
+
 ;; -------------------------
 ;; Views
 
@@ -308,7 +329,9 @@
             [:button {:title "refresh" :on-click #(if (= (count @urls-syncing) 0) (sync-urls urls-syncing))}
               [:i {:class (str "fa fa-refresh" (if (> (count @urls-syncing) 0) " fa-spin spin-2x" ""))}]
               [:span {:class "url-count"} (if (> (count @urls-syncing) 0) (count @urls-syncing))]])
-          [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]]])
+          [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]]
+       (component-podcasts)
+       (component-podcast-playing)])
     ; the user isn't logged in or hasn't set up sync - redirect to sync setup page.
     (do
       (redirect "#/sync-config")
