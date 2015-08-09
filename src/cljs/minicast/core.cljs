@@ -299,7 +299,7 @@
 (let [podcast (atom nil) podcast-parent (atom nil)]
   (defn component-podcasts []
     [:div {:class "podcasts"}
-       (doall (for [p (@app-state "podcasts")]
+       (doall (for [p (take 100 (@app-state "podcasts"))]
          (let [parent (get-uri-map (p "source-uri"))]
             [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "hello") (reset! podcast p) (reset! podcast-parent parent))}
               [:div {:class "podcast_left"} [:div {:class "podcast_image"} [:img {:src (parent "image-uri")}]]]
