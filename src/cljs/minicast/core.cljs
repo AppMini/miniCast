@@ -238,7 +238,8 @@
                            "link" (or (get-item-tag i :link) guid)
                            "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description)) "\n"))
                            "media" (-> i :content (find-tag :enclosure) first :attributes)
-                           "duration" (get-item-tag i :itunes:duration)}))))))
+                           "duration" (get-item-tag i :itunes:duration)
+                           "source-uri" uri}))))))
             (log-error (str "Error fetching " uri)))
           ; remove the URL from our pending URLs
           (swap! syncing (fn [old] (remove (fn [x] (= x uri)) old))))))))
