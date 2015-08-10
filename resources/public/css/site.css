@@ -6,14 +6,18 @@ html, body {
 body {
   font-family: "Open Sans", Arial, sans-serif;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   -webkit-font-smoothing: antialiased;
   font-size: 1.125em;
-  line-height: 1.5em;
   background-color: #333;
 }
 
+audio {
+  width: 100%;
+}
+
 #app {
+  height: 100%;
 }
 
 #app div.main {
@@ -21,11 +25,12 @@ body {
   max-width: 98%;
   margin-left: auto;
   margin-right: auto;
-  height: 100%;
+  min-height: 100%;
 }
 
 #app > div {
   background-color: white;
+  min-height: 100%;
 }
 
 #app > div.night {
@@ -223,24 +228,17 @@ li {
 /*** Podcast things ***/
 
 .podcast_item {
-  width:500px;
+  cursor: pointer;
   height: auto;
-  margin-left: 230px;
-  margin-right: 230px;
   margin-top: 5px;
-  float: left;
   padding: 10px;
   border-radius: 6px;
-  box-shadow: 0px 1px 1px #f9f9fb;
-  border-bottom: 1px solid #dfdfe1;
-  background: rgb(244,245,247); /* Old browsers */
-  background: -moz-linear-gradient(top,  rgba(244,245,247,1) 0%, rgba(243,243,245,1) 100%); /* FF3.6+ */
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(244,245,247,1)), color-stop(100%,rgba(243,243,245,1))); /* Chrome,Safari4+ */
-  background: -webkit-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* Chrome10+,Safari5.1+ */
-  background: -o-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* Opera 11.10+ */
-  background: -ms-linear-gradient(top,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* IE10+ */
-  background: linear-gradient(to bottom,  rgba(244,245,247,1) 0%,rgba(243,243,245,1) 100%); /* W3C */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f4f5f7', endColorstr='#f3f3f5',GradientType=0 ); /* IE6-9 */
+  min-height: 120px;
+  color: #333;
+}
+
+#app > div.night .podcast_item {
+  color: #aaa;
 }
 
 .podcast_image {
@@ -270,9 +268,9 @@ li {
 }
 
 .podcast_right {
-  width:380px;
-  padding-left: 20px;
-  float: left;
+  width: inherit;
+  margin-left: 120px;
+  margin-right: 10px;
 }
 
 .podcast_description {
@@ -287,7 +285,14 @@ li {
   left:0px;
   right:0px;
   bottom:0px;
-  background-color: #fff;
+  margin-top: 10px;
+  background-color: white;
+  box-shadow: 16px 16px 0px 0px #FFF;
+}
+
+#app > div.night .podcast_playing {
+  background-color: black;
+  box-shadow: 16px 16px 0px 0px #000;
 }
 
 .podcast_playing_image {

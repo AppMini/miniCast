@@ -362,7 +362,8 @@
         (case a
           "AUTHENTICATED" (component-urls-config)
           nil (component-urls-config)
-          nil)]))
+          nil)
+       (component-podcast-playing)]))
 
 (defn current-page []
   [:div {:class (@app-state "scheme")} [(session/get :current-page)]])
