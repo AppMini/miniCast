@@ -177,6 +177,14 @@
     ; look for itunes image tag
     (-> contents (find-tag :itunes:image) first :attributes :href)))
 
+; find the title in a podcast rss
+(defn podcast-find-title [contents]
+  (or
+    ; look for image -> title tag
+    (-> contents (find-tag :image) first :content (find-tag :title) first :content first)
+    ; look for the actual title tag
+    (-> contents (find-tag :title) first :content first)))
+
 ; make a hash-map "json friendly" by turning all of the keywords into names
 (defn json-friendly [m]
   (into {}
