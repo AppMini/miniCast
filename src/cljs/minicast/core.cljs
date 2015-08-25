@@ -17,7 +17,7 @@
 ; collect errors to show to the user
 (defonce errors (atom []))
 ; count of urls currently in the syncing state
-(defonce urls-syncing (atom nil))
+(def urls-syncing (atom nil))
 ; is the user logged in?
 (def auth-state (atom "AUTH_UNKNOWN"))
 
