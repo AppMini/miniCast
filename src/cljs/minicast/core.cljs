@@ -275,6 +275,12 @@
     [:div {:class "fog"}]
     [:div {:class "logo"} "mini" [:b "Cast"]]])
 
+(defn component-sync-button []
+  (if (> (count (@app-state "uris")) 0)
+    [:button {:title "refresh" :on-click #(if (= (count @urls-syncing) 0) (sync-urls urls-syncing))}
+      [:i {:class (str "fa fa-refresh" (if (> (count @urls-syncing) 0) " fa-spin spin-2x" ""))}]
+      [:span {:class "url-count"} (if (> (count @urls-syncing) 0) (count @urls-syncing))]]))
+
 (let [un (atom "") pw (atom "")]
   (defn component-user-pass [formclass message]
     [:div {:class formclass}
