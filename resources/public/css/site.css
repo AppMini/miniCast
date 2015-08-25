@@ -221,6 +221,7 @@ li {
 }
 
 .podcast-logo-small {
+  margin-right: 0.5em;
   width: 32px;
   float: left;
 }
@@ -260,7 +261,6 @@ li {
 }
 
 .podcast_name {
-  float: left;
   font-size: 11px;
   width: 380px;
   padding-bottom: 0px;
@@ -285,14 +285,28 @@ li {
   left:0px;
   right:0px;
   bottom:0px;
-  margin-top: 10px;
+  padding-top: 10px;
   background-color: white;
-  box-shadow: 16px 16px 0px 0px #FFF;
+  box-shadow: 0px 0px 8px 8px #eee;
+  border-top: 1px solid #ddd;
 }
 
 #app > div.night .podcast_playing {
   background-color: black;
-  box-shadow: 16px 16px 0px 0px #000;
+  border-top: 1px solid #333;
+  box-shadow: 0px 0px 8px 8px #111;
+}
+
+.podcast_right a {
+  float: right;
+  color: #aaa;
+  font-size: 2em;
+  margin: 0.1em;
+}
+
+.podcast_right a:hover {
+  text-decoration: none;
+  color: #09f;
 }
 
 .podcast_playing_image {
