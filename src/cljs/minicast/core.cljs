@@ -229,9 +229,11 @@
             (let [rss (xml->clj response {:strict false})
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
-                  image (podcast-find-image contents)]
+                  image (podcast-find-image contents)
+                  title (podcast-find-title contents)]
               ; update the latest version of the podcast's reference image
               (swap! app-state update-uri uri "image-uri" image)
+              (swap! app-state update-uri uri "title" title)
               ; ensure we have a list of podcasts in our app state
               (if (nil? (@app-state "podcasts"))
                 ; just jam a completely new one in there
@@ -250,8 +252,8 @@
                            "timestamp" (js/Date. (get-item-tag i :pubdate))
                            "title" (get-item-tag i :title)
                            "link" (or (get-item-tag i :link) guid)
-                           "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description)) "\n"))
-                           "media" (-> i :content (find-tag :enclosure) first :attributes)
+                           "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description) "") "\n"))
+                           "media" (json-friendly (-> i :content (find-tag :enclosure) first :attributes))
                            "duration" (get-item-tag i :itunes:duration)
                            "source-uri" uri}))))))
             (log-error (str "Error fetching " uri)))
@@ -295,6 +297,7 @@
   [:div
     [:div {:class "buttonbar"}
       [:button {:title "home" :on-click #(redirect "#/") :id "settings-home"} [:i {:class "fa fa-arrow-circle-left"}]] 
+      (component-sync-button)
       [:button {:title "scheme" :on-click #(swap! app-state toggle-scheme)} [:i {:class (str "fa " (if (= (@app-state "scheme") "night") "fa-sun-o" "fa-glass"))}]]
       [:button {:title "logout" :on-click submit-logout-request} [:i {:class "fa fa-sign-out"}]]]
     [:p [:i {:class "fa fa-check tick"}] "Successfully connected to the sync backend."]])
@@ -321,7 +324,7 @@
     [:div {:class "podcasts"}
        (doall (for [p (take 100 (@app-state "podcasts"))]
          (let [parent (get-uri-map (p "source-uri"))]
-            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "hello") (reset! podcast p) (reset! podcast-parent parent))}
+            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "p" p) (print "parent" parent) (reset! podcast p) (reset! podcast-parent parent))}
               [:div {:class "podcast_left"} [:div {:class "podcast_image"} [:img {:src (parent "image-uri")}]]]
               [:div {:class "podcast_right"}
                 [:div {:class "podcast_name"} (parent "title")]
@@ -329,13 +332,17 @@
                 [:div {:class "podcast_description"} (p "description")]]])))])
 
   (defn component-podcast-playing []
-    (if @podcast
-      [:div {:class "podcast_playing"}
-        [:div {:class "podcast_playing_image"} [:img {:src (@podcast-parent "image-uri")}]]
-        [:div {:class "podcast_right"}
-          [:div {:class "podcast_name"} (@podcast-parent "title")]
-          [:div {:class "podcast_title"} (@podcast "title")]
-          [:audio {:src ((@podcast "media") "url") :controls true}]]])))
+    (if (and @podcast @podcast-parent)
+      (let [url (get (get @podcast "media") "url")]
+        [:div {:class "podcast_playing"}
+          [:div {:class "podcast_playing_image"} [:img {:src (get @podcast-parent "image-uri")}]]
+          [:div {:class "podcast_right"}
+            [:a {:class "podcast_download" :href url} [:i {:class "fa fa-download"}]]
+            [:a {:class "podcast_link" :target "_blank" :href (get @podcast "link")} [:i {:class "fa fa-link"}]]
+            [:div {:class "podcast_name"} (get @podcast-parent "title")]
+            [:div {:class "podcast_title"} (get @podcast "title")]
+            ; http://stackoverflow.com/a/8268563/2131094
+            [:audio {:src url :controls true}]]]))))
 
 ;; -------------------------
 ;; Views
@@ -345,10 +352,7 @@
     (fn []
       [:div {:class "main"}
         [:div {:class "buttonbar"}
-          (if (> (count (@app-state "uris")) 0)
-            [:button {:title "refresh" :on-click #(if (= (count @urls-syncing) 0) (sync-urls urls-syncing))}
-              [:i {:class (str "fa fa-refresh" (if (> (count @urls-syncing) 0) " fa-spin spin-2x" ""))}]
-              [:span {:class "url-count"} (if (> (count @urls-syncing) 0) (count @urls-syncing))]])
+          (component-sync-button)
           [:button {:title "settings" :on-click #(redirect "#/sync-config")} [:i {:class "fa fa-cog"}]]]
        (component-podcasts)
        (component-podcast-playing)])
