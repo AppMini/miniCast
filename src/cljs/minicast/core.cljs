@@ -177,6 +177,12 @@
     ; look for itunes image tag
     (-> contents (find-tag :itunes:image) first :attributes :href)))
 
+; make a hash-map "json friendly" by turning all of the keywords into names
+(defn json-friendly [m]
+  (into {}
+    (for [[k v] m]
+      [(keyword k) v])))
+
 ;; -------------------------
 ;; data sync
 
