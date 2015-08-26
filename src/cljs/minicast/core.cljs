@@ -255,7 +255,7 @@
         (let [[ok response] (<! chan)]
           ; check the ajax result code and sanity check for xml
           (if (and ok (string? response))
-            (let [rss (try (xml->clj response {:strict true}) (catch :default e {}))
+            (let [rss (xml->clj response {:strict false})
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
                   image (podcast-find-image contents)
