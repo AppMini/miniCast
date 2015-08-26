@@ -147,7 +147,10 @@
                  :with-credentials true
                  :response-format (json-response-format)
                  :handler (fn [[ok result]]
-                            (if (check-auth-state [ok result]) (callback [ok result])))}))
+                            ; check the auth status in case they have been logged out
+                            (check-auth-state [ok result])
+                            ; always run the callback so the go blocks will finish
+                            (callback [ok result]))}))
 
 ; initiate the request for user's current state
 (defn request-app-state []
