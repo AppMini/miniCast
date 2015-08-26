@@ -364,7 +364,7 @@
             [:div {:class "podcast_name"} (get @podcast-parent "title")]
             [:div {:class "podcast_title"} (get @podcast "title")]
             ; http://stackoverflow.com/a/8268563/2131094
-            [:audio {:src url :controls true}]]]))))
+            (if url [:audio {:src url :controls true}] [:div {:class "error"} [:i {:class "fa fa-warning"}] "No audio found."])]]))))
 
 ;; -------------------------
 ;; Views
