@@ -81,55 +81,73 @@
        true
        (catch :default e false)))
 
+; check and update the app state to reflect auth state coming from the server
+(defn check-auth-state [[ok result]]
+  (do
+    ;(print "auth state ok:" ok)
+    ;(print "auth state result:" result)
+    ;(print "auth state body:" (get-body ok result))
+    (cond
+      ; basic check - 403 means not authenticated
+      ((and (not (is-valid-json (:response result))) ( = (:status result) 403)))
+        (reset! auth-state "AUTH_")
+
+      ; if we get a 404 from the server without the server sending back the api-error key it isn't installed
+      (and (is-valid-json (:response result)) (or (and
+            ; if we didn't receive an api error
+            (not (contains? (get-body ok result) "api-error"))
+            ; but we did receive a 404
+            (= (:status result) 404))
+          ; or some other non-server error happened
+          (= (:status result) 0)))
+        (reset! auth-state "AUTH_SERVER_NOT_FOUND")
+    
+      ; if we got a special error response from the API
+      (and (is-valid-json (:response result)) (contains? (get-body ok result) "api-error"))
+        (let [s (get (get-body ok result) "api-error")]
+          (if (= (.indexOf s "AUTH") 0)
+            (reset! auth-state s)
+            (log-error (str "Error talking to the server: " s " see console for more details."))))
+    
+      ; if we got a special success response from the API
+      (and (is-valid-json (:response result)) (contains? (get-body ok result) "api"))
+        (let [s (get (get-body ok result) "api")]
+          (if (= (.indexOf s "AUTH") 0)
+            (reset! auth-state s)
+            (print "API success:" s)))
+    
+    ; if we got a legitimate state return true
+    true true)))
+
 ; update the authentication state token after a request
 (defn updated-server-state-handler [params]
   (fn [[ok result]]
-    (do
-      (print "auth state ok:" ok)
-      (print "auth state result:" result)
-      (print "auth state body:" (get-body ok result))
-      ; if we get a 404 from the server without the server sending back the api-error key it isn't installed
-      (cond
-        (or (and
-              ; if we didn't receive an api error
-              (not (contains? (get-body ok result) "api-error"))
-              ; but we did receive a 404
-              (= (:status result) 404))
-            ; or some other non-server error happened
-            (= (:status result) 0))
-          (reset! auth-state "AUTH_SERVER_NOT_FOUND")
-      
-        ; if we got a special error response from the API
-        (contains? (get-body ok result) "api-error")
-          (let [s (get (get-body ok result) "api-error")]
-            (if (= (.indexOf s "AUTH") 0)
-              (reset! auth-state s)
-              (log-error (str "Error talking to the server: " s " see console for more details."))))
-      
-        ; if we got a special success response from the API
-        (contains? (get-body ok result) "api")
-          (let [s (get (get-body ok result) "api")]
-            (if (= (.indexOf s "AUTH") 0)
-              (reset! auth-state s)
-              (print "API success:" s)))
-      
-      ; if we got a legitimate state
-      true
-        (let [new-app-state (get-body ok result)]
+    (if (check-auth-state [ok result])
+      (let [new-app-state (get-body ok result)]
           (if (and (not (nil? new-app-state)) (contains? new-app-state "app-state"))
             (do
               (print "new-app-state" new-app-state)
               ; merge the existing state (from localstorage) with server state
-              (swap! app-state merge-new-state (new-app-state "app-state")))))))))
+              (swap! app-state merge-new-state (new-app-state "app-state"))))))))
 
 ; unified interface for access to our api
 (defn api-request [params & config]
-  (let [request (merge {:uri server-url :method :get :with-credentials true :response-format (json-response-format) :handler (updated-server-state-handler params)} {:params params} (if (count config) (first config) {}))]
+  (let [request (merge {:uri server-url
+                        :method :get
+                        :with-credentials true
+                        :response-format (json-response-format)
+                        :handler (updated-server-state-handler params)} {:params params} (if (count config) (first config) {}))]
     (ajax-request request)))
 
 ; special call to the proxy request endpoint
 (defn proxy-request [url callback]
-  (ajax-request {:uri server-url :params {:proxy url} :method :get :with-credentials true :response-format (json-response-format) :handler callback}))
+  (ajax-request {:uri server-url
+                 :params {:proxy url}
+                 :method :get
+                 :with-credentials true
+                 :response-format (json-response-format)
+                 :handler (fn [[ok result]]
+                            (if (check-auth-state [ok result]) (callback [ok result])))}))
 
 ; initiate the request for user's current state
 (defn request-app-state []
