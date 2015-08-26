@@ -251,7 +251,6 @@
                           {"guid" guid
                            "timestamp" (js/Date. (get-item-tag i :pubdate))
                            "title" (get-item-tag i :title)
-                           "link" (or (get-item-tag i :link) guid)
                            "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description) "") "\n"))
                            "media" (json-friendly (-> i :content (find-tag :enclosure) first :attributes))
                            "duration" (get-item-tag i :itunes:duration)
@@ -338,7 +337,6 @@
           [:div {:class "podcast_playing_image"} [:img {:src (get @podcast-parent "image-uri")}]]
           [:div {:class "podcast_right"}
             [:a {:class "podcast_download" :href url} [:i {:class "fa fa-download"}]]
-            [:a {:class "podcast_link" :target "_blank" :href (get @podcast "link")} [:i {:class "fa fa-link"}]]
             [:div {:class "podcast_name"} (get @podcast-parent "title")]
             [:div {:class "podcast_title"} (get @podcast "title")]
             ; http://stackoverflow.com/a/8268563/2131094
