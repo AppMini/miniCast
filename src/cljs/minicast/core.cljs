@@ -185,6 +185,8 @@
 (defn redirect [url]
   (set! (-> js/document .-location .-href) url))
 
+; duh - tubax library does all this already better
+
 ; find certain tags within an xml structures
 (defn find-tag [xml tag]
   (filter #(= (% :tag) tag) xml))
