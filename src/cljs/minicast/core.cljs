@@ -189,7 +189,7 @@
 
 ; find certain tags within an xml structures
 (defn find-tag [xml tag]
-  (filter #(= (% :tag) tag) xml))
+  (filter #(= (get % :tag) tag) xml))
 
 ; get a particular item's tag value
 (defn get-item-tag [item tag]
@@ -252,11 +252,12 @@
         (let [[ok response] (<! chan)]
           ; check the ajax result code and sanity check for xml
           (if (and ok (string? response))
-            (let [rss (xml->clj response {:strict false})
+            (let [rss (try (xml->clj response {:strict true}) (catch :default e {}))
                   contents (get-in rss [:content 0 :content])
                   items (-> contents (find-tag :item))
                   image (podcast-find-image contents)
                   title (podcast-find-title contents)]
+              (if (= (count items) 0) (log-error (str uri " contains no podcasts.")))
               ; update the latest version of the podcast's reference image
               (swap! app-state update-uri uri "image-uri" image)
               (swap! app-state update-uri uri "title" title)
@@ -348,8 +349,8 @@
   (defn component-podcasts []
     [:div {:class "podcasts"}
        (doall (for [p (take 100 (@app-state "podcasts"))]
-         (let [parent (get-uri-map (p "source-uri"))]
-            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "p" p) (print "parent" parent) (reset! podcast p) (reset! podcast-parent parent))}
+         (if-let [parent (get-uri-map (p "source-uri"))]
+            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "p" p) (reset! podcast p) (reset! podcast-parent parent))}
               [:div {:class "podcast_left"} [:div {:class "podcast_image"} [:img {:src (parent "image-uri")}]]]
               [:div {:class "podcast_right"}
                 [:div {:class "podcast_name"} (parent "title")]
@@ -366,7 +367,7 @@
             [:div {:class "podcast_name"} (get @podcast-parent "title")]
             [:div {:class "podcast_title"} (get @podcast "title")]
             ; http://stackoverflow.com/a/8268563/2131094
-            (if url [:audio {:src url :controls true}] [:div {:class "error"} [:i {:class "fa fa-warning"}] "No audio found."])]]))))
+            (if url [:audio {:src url :controls true}] [:div {:class "error"} [:i {:class "fa fa-warning"}] "No audio found. Is this a podcast feed?"])]]))))
 
 ;; -------------------------
 ;; Views
