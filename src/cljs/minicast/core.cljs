@@ -13,7 +13,7 @@
     (:import goog.History))
 
 ; set the app state from last-saved localstorage
-(defonce app-state (atom (recall "app-state")))
+(defonce app-state (atom (or (recall "app-state") {})))
 ; collect errors to show to the user
 (defonce errors (atom []))
 ; count of urls currently in the syncing state
