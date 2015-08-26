@@ -75,6 +75,12 @@
   ;(update-in (merge old-app-state new-app-state) ["uris"] (old-app-state "uris"))
   new-app-state)
 
+; test for valid json
+(defn is-valid-json [j]
+  (try (js/JSON.parse j)
+       true
+       (catch :default e false)))
+
 ; update the authentication state token after a request
 (defn updated-server-state-handler [params]
   (fn [[ok result]]
