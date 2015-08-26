@@ -89,8 +89,8 @@
     ;(print "auth state body:" (get-body ok result))
     (cond
       ; basic check - 403 means not authenticated
-      ((and (not (is-valid-json (:response result))) ( = (:status result) 403)))
-        (reset! auth-state "AUTH_")
+      (and (not (is-valid-json (:response result))) (= (:status result) 403))
+        (reset! auth-state "AUTH_NO_CREDENTIALS")
 
       ; if we get a 404 from the server without the server sending back the api-error key it isn't installed
       (and (is-valid-json (:response result)) (or (and
