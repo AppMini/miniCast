@@ -251,7 +251,7 @@
                           {"guid" guid
                            "timestamp" (js/Date. (get-item-tag i :pubdate))
                            "title" (get-item-tag i :title)
-                           "description" (first (.split (or (get-item-tag i :itunes:summary) (get-item-tag i :description) "") "\n"))
+                           "description" (first (.split (or (get-item-tag i :description) (get-item-tag i :itunes:summary) "") "\n"))
                            "media" (json-friendly (-> i :content (find-tag :enclosure) first :attributes))
                            "duration" (get-item-tag i :itunes:duration)
                            "source-uri" uri}))))))
