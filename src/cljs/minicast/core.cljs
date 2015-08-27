@@ -318,7 +318,7 @@
      [:div
        [:p message]
        [:input {:placeholder "username" :type "text" :value @un :on-change #(reset! un (-> % .-target .-value))}]
-       [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value))}]
+       [:input {:type "password" :value @pw :placeholder "password" :on-change #(reset! pw (-> % .-target .-value)) :on-key-down #(if (= (.-which %) 13) (submit-user-pass-form un pw))}]
        [:div {:class "buttonbar"}
          [:button {:on-click #(submit-user-pass-form un pw)} [:i {:class "fa fa-check"}]]]]]))
 
@@ -340,11 +340,16 @@
     [:div {:class "url" :type "uri"} (if (item "image-uri") [:img {:class "podcast-logo-small" :src (item "image-uri")}]) (item "uri")]])
 
 (let [url-to-add (atom "")]
+  ; adds the typed URI to the list
+  (defn submit-uri []
+    (swap! app-state add-uri @url-to-add)
+    (reset! url-to-add ""))
+
   (defn component-urls-config []
     [:div
       [:div {:class "buttonbar"}
-        [:button {:title "add podcast" :on-click (fn [ev] (swap! app-state add-uri @url-to-add) (reset! url-to-add ""))} [:i {:class "fa fa-check"}]]
-        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value))}]]
+        [:button {:title "add podcast" :on-click submit-uri} [:i {:class "fa fa-check"}]]
+        [:input {:placeholder "https://www.astronomycast.com/feed/" :class "url" :type "uri" :value @url-to-add :on-change #(reset! url-to-add (-> % .-target .-value)) :on-key-down #(if (= (.-which %) 13) (submit-uri))}]]
       [:ul
         (map-indexed component-uri-listitem (reverse (@app-state "uris")))]]))
 
