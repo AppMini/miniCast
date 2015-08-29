@@ -46,9 +46,9 @@
   :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
-                                        :asset-path   "js/out"
+                                        :asset-path    "js/out"
                                         :optimizations :none
-                                        :source-map true
+                                        :source-map    true
                                         :pretty-print  true}}}}
 
   :profiles {:dev {:repl-options {:init-ns minicast.repl
