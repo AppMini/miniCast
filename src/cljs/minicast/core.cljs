@@ -14,6 +14,8 @@
 
 ; set the app state from last-saved localstorage
 (defonce app-state (atom (or (recall "app-state") {})))
+; remember where different podcasts are up to (debounce - this gets written to state)
+(defonce play-position (atom {}))
 ; collect errors to show to the user
 (defonce errors (atom []))
 ; count of urls currently in the syncing state
@@ -33,6 +35,10 @@
 ; log a single error message
 (defn log-error [e]
   (swap! errors conj e))
+
+; current timestamp
+(defn get-now []
+  (.getTime (js/Date.)))
 
 ; if we hit an error loading an ajax endpoint
 (defn ajax-error-handler [{:keys [status status-text]}]
@@ -61,7 +67,7 @@
 
 ; swap! to add a uri to app-state
 (defn add-uri [old-app-state uri]
-  (let [uri-struct {"timestamp" (.getTime (js/Date.)) "uri" uri}]
+  (let [uri-struct {"timestamp" (get-now) "uri" uri}]
     (if (nil? (old-app-state "uris"))
       ; just jam a completely new one in there
       (assoc-in old-app-state ["uris"] [uri-struct])
@@ -147,6 +153,7 @@
                  :with-credentials true
                  :response-format (json-response-format)
                  :handler (fn [[ok result]]
+                            (print "proxy-request" ok url)
                             ; check the auth status in case they have been logged out
                             (check-auth-state [ok result])
                             ; always run the callback so the go blocks will finish
@@ -358,13 +365,80 @@
     [:div {:class "podcasts"}
        (doall (for [p (take 100 (@app-state "podcasts"))]
          (if-let [parent (get-uri-map (p "source-uri"))]
-            [:div {:class "podcast_item" :key (p "guid") :on-click (fn [ev] (print "p" p) (reset! podcast p) (reset! podcast-parent parent))}
+          (let [src (get (get p "media") "url")
+                duration (p "duration")
+                duration-parts (if (and duration (>= (.indexOf duration ":") 0)) (.split duration ":") nil)
+                duration-computed (if duration-parts (+ (* 60 60 (js/parseInt (get duration-parts 0))) (* 60 (js/parseInt (get duration-parts 1))) (js/parseInt (get duration-parts 2))) duration)
+                pos (or (@play-position src) (get-in @app-state ["positions" src "value"]))
+                percent (js/Math.round (* 100 (/ (js/parseFloat pos) (js/parseFloat duration-computed))))]
+            [:div {:class (str "podcast_item" (if (>= percent 97) " podcast_completed")) :key (p "guid") :on-click (fn [ev] (reset! podcast p) (reset! podcast-parent parent))}
               [:div {:class "podcast_left"} [:div {:class "podcast_image"} [:img {:src (parent "image-uri")}]]]
               [:div {:class "podcast_right"}
+                  (if (and pos (> pos 1) duration-computed)
+                    [:div {:class "podcast_percent"} [:p {:style {"width" (str percent "%")}}]])
                 [:div {:class "podcast_name"} (parent "title")]
                 [:div {:class "podcast_title"} (p "title")]
-                [:div {:class "podcast_description"} (p "description")]]])))])
+                [:div {:class "podcast_description"} (p "description")]]]))))])
 
+  (defn audio-component []
+    (fn []
+      (let [url ((@podcast "media") "url")]
+        [:audio {:src url :id "player" :controls true}])))
+
+  (defn do-seek [audio-element src]
+    (let [last-position (or (get-in @play-position [src]) (get-in @app-state ["positions" src "value"]) 0)]
+      ; (print "do-seek" audio-element src last-position)
+      (if (not (= (.-currentTime audio-element) last-position))
+        (do
+          (print "seeking" src last-position)
+          (set! (.-currentTime audio-element) last-position))
+        (print "not seeking"))))
+
+  (defn seek-when-ready [audio-element src]
+      ; if we can seek now
+      (if (> (.-length (.-seekable audio-element)) 0)
+        (do-seek audio-element src)
+        ; wait until we can seek
+        (do (print "registering listener")
+          (events/listenOnce audio-element "loadedmetadata" (fn [ev] (print "canplay" src) (do-seek audio-element src))))))
+  
+  ; function to persist where we are up to in a playing stream
+  (defn store-position [now src current-time source-event]
+    ;(print "store-position:" source-event now src current-time)
+    ; if the updated time is different from the one we set
+    (if (not (= (get-in @app-state ["positions" src "value"]) current-time))
+      (swap! app-state assoc-in ["positions" src] {"timestamp" now "value" current-time})))
+
+  (defn persist-position [audio-element event-name force-save]
+    (let [src (.-src audio-element)]
+            (when force-save
+              (store-position (get-now) src (.-currentTime audio-element) event-name))
+            ;(print "persist-position" event-name src (.-currentTime audio-element))
+            (swap! play-position assoc-in [src] (.-currentTime audio-element))))
+  
+  (def audio-component-wrapper (with-meta audio-component
+                 {:component-did-mount (fn [this old-props]
+                                         (let [a (reagent/dom-node this)
+                                               src (.-src a)]
+                                          ; (print "component-did-mount" src last-position)
+                                          ; when the player updates - keep a record in memory of where we are up to if playing
+                                          (events/listen a "timeupdate" (fn [ev] (if (not (.-paused a)) (persist-position a "timeupdate" false))))
+                                          ; this can happen when seek is programmatic, causing lots of trouble
+                                          ;(events/listen a "seeked" (fn [ev] (persist-position a "seeked" true)))
+                                          (events/listen a "pause" (fn [ev] (persist-position a "pause" true)))
+                                          (events/listen a "play" (fn [ev] (persist-position a "play" true)))
+                                          ; once the audio element is ready to play, set its correct position
+                                          (seek-when-ready a src)))
+                  :component-will-update (fn [this old-props old-children]
+                                              (let [a (reagent/dom-node this)
+                                                    src (.-src a)]
+                                                (persist-position a "audio-component-will-update" src)))
+                  :component-did-update (fn [this old-props old-children]
+                                          (let [a (reagent/dom-node this)
+                                                src (.-src a)]
+                                            ; (print "component-did-update" src last-position)
+                                            (seek-when-ready a src)))}))
+  
   (defn component-podcast-playing []
     (if (and @podcast @podcast-parent)
       (let [url (get (get @podcast "media") "url")]
@@ -375,7 +449,7 @@
             [:div {:class "podcast_name"} (get @podcast-parent "title")]
             [:div {:class "podcast_title"} (get @podcast "title")]
             ; http://stackoverflow.com/a/8268563/2131094
-            (if url [:audio {:src url :controls true}] [:div {:class "error"} [:i {:class "fa fa-warning"}] "No audio found. Is this a podcast feed?"])]]))))
+            (if url [audio-component-wrapper] [:div {:class "error"} [:i {:class "fa fa-warning"}] "No audio found. Is this a podcast feed?"])]]))))
 
 ;; -------------------------
 ;; Views

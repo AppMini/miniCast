@@ -277,6 +277,37 @@ li {
   margin-right: 10px;
 }
 
+.podcast_percent {
+  float: right;
+  width: 100px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0px;
+  margin: 0px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+div.night .podcast_percent {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.podcast_completed {
+  opacity: 0.3;
+}
+
+.podcast_percent p {
+  background-color: rgba(0, 0, 55, 0.3);
+  display: block;
+  margin: 0px;
+  padding: 0px;
+  padding-left: 0.5em;
+  height: 3px;
+}
+
+div.night .podcast_percent p {
+  background-color: rgba(200, 200, 255, 0.1);
+}
+
 .podcast_description {
   font-size: 11px;
   margin-top: 10px;
