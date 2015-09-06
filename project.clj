@@ -49,7 +49,12 @@
                                         :asset-path    "js/out"
                                         :optimizations :none
                                         :source-map    true
-                                        :pretty-print  true}}}}
+                                        :pretty-print  true}}
+                       :min {:source-paths ["env/prod/cljs"]
+                             :compiler {:output-to "js/app.js"
+                                        :main "minicast.prod"
+                                        :optimizations :advanced
+                                        :pretty-print false}}}}
 
   :profiles {:dev {:repl-options {:init-ns minicast.repl
                                   :nrepl-middleware []}
