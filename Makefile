@@ -2,10 +2,10 @@ CSS=css/site.css
 IDX=index.html
 APP=js/app.js
 
-LDR=css/loaders/loaders.min.css
+LDR=css/loaders.css/loaders.min.css
 FA=css/Font-Awesome/css/font-awesome.min.css
 
-all: $(APP) $(CSS) $(IDX) $(LDF) $(FA)
+all: $(APP) $(CSS) $(IDX) $(LDR) $(FA)
 
 $(CSS): resources/public/css/site.css
 	mkdir -p css
@@ -18,8 +18,8 @@ $(APP): src/**/** $(XTRN) project.clj
 $(IDX): src/clj/minicast/*.clj
 	lein run -m minicast.utils/index-html > $(IDX)
 
-$(LDR): resources/public/css/loaders/loaders.min.css
-	mkdir -p css/loaders/
+$(LDR): resources/public/css/loaders.css/loaders.min.css
+	mkdir -p css/loaders.css/
 	cp $< $@
 
 $(FA): resources/public/css/Font-Awesome/css/font-awesome.min.css
