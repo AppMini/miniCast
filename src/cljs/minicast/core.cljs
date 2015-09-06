@@ -25,7 +25,7 @@
 
 (enable-console-print!)
 
-(def server-url "http://localhost:8000/server/index.php")
+(def server-url "server/index.php")
 
 (print "app-state @ launch:" @app-state)
 
