@@ -1,4 +1,4 @@
-Web app to listen to podcasts.
+Self-hosted web app for listening to podcasts.
 
 ![Screenshot of the app](./screenshot.png)
 
