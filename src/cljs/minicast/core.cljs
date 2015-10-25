@@ -1,5 +1,6 @@
 (ns minicast.core
-    (:require-macros [cljs.core.async.macros :refer [go]])
+    (:require-macros [cljs.core.async.macros :refer [go]]
+                     [minicast.env :refer [get-env]])
     (:require [minicast.store :refer [remember! forget! recall]]
               [reagent.core :as reagent :refer [atom]]
               [reagent.session :as session]
@@ -25,7 +26,9 @@
 
 (enable-console-print!)
 
-(def server-url "server/index.php")
+(print "dev?" )
+(def server-url (if (get-env :dev) "http://localhost:8000/server/index.php" "server/index.php"))
+
 
 (print "app-state @ launch:" @app-state)
 
