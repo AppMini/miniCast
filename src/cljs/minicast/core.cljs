@@ -1,5 +1,6 @@
 (ns minicast.core
-    (:require-macros [cljs.core.async.macros :refer [go]])
+    (:require-macros [cljs.core.async.macros :refer [go]]
+                     [minicast.env :refer [get-env]])
     (:require [minicast.store :refer [remember! forget! recall]]
               [reagent.core :as reagent :refer [atom]]
               [reagent.session :as session]
@@ -25,7 +26,7 @@
 
 (enable-console-print!)
 
-(def server-url "server/index.php")
+(def server-url (if (get-env :dev) "http://localhost:8000/server/index.php" "server/index.php"))
 
 (print "app-state @ launch:" @app-state)
 
@@ -221,12 +222,6 @@
     ; look for the actual title tag
     (-> contents (find-tag :title) first :content first)))
 
-; make a hash-map "json friendly" by turning all of the keywords into names
-(defn json-friendly [m]
-  (into {}
-    (for [[k v] m]
-      [(keyword k) v])))
-
 ;; -------------------------
 ;; data sync
 
@@ -276,7 +271,7 @@
                 ; just jam a completely new one in there
                 (swap! app-state assoc-in ["podcasts"] []))
               ; add any new podcasts we find in the loop of items to our master list
-              (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (take 100 (reverse (sort-by #(js/Date. (% "timestamp")) (concat old-podcasts (vec new-podcasts))))))
+              (swap! app-state update-in ["podcasts"] (fn [old-podcasts new-podcasts] (js->clj (clj->js (vec (take 100 (reverse (sort-by #(js/Date. (% "timestamp")) (concat old-podcasts (vec new-podcasts)))))))))
                 ; filter out the nil values
                 (remove nil?
                   ; loop through all of the items we received
@@ -289,7 +284,7 @@
                            "timestamp" (js/Date. (get-item-tag i :pubdate))
                            "title" (get-item-tag i :title)
                            "description" (first (.split (or (get-item-tag i :description) (get-item-tag i :itunes:summary) "") "\n"))
-                           "media" (json-friendly (-> i :content (find-tag :enclosure) first :attributes))
+                           "media" (clj->js (-> i :content (find-tag :enclosure) first :attributes))
                            "duration" (get-item-tag i :itunes:duration)
                            "source-uri" uri}))))))
             (log-error (str "Error fetching " uri)))
